@@ -1,3 +1,5 @@
+import { ClientesFornecedoresModule } from './clientes-fornecedores/clientes-fornecedores.module';
+import { CompaniesModule } from './companies/companies.module';
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
@@ -6,9 +8,12 @@ import { User } from './users/user.entity';
 import { UsersModule } from './users/users.module';
 import { AuthModule } from './auth/auth.module';
 import { GetModule } from './get/get.module';
+import { Company } from './companies/ company.entity';
 
 @Module({
   imports: [
+    ClientesFornecedoresModule,
+    CompaniesModule,
     ConfigModule.forRoot({
       isGlobal: true,
     }),
@@ -24,11 +29,11 @@ import { GetModule } from './get/get.module';
       synchronize: true,
     }),
 
-    TypeOrmModule.forFeature([User]),
+    TypeOrmModule.forFeature([User, Company]),
 
     UsersModule,
     AuthModule,
     GetModule,
   ],
 })
-export class AppModule {}
+export class AppModule { }
