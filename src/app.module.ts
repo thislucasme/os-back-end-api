@@ -1,3 +1,4 @@
+import { ProdutosServicosModule } from './produtos-servicos/produtos-servicos.module';
 import { ClientesFornecedoresModule } from './clientes-fornecedores/clientes-fornecedores.module';
 import { CompaniesModule } from './companies/companies.module';
 import { Module } from '@nestjs/common';
@@ -12,6 +13,7 @@ import { Company } from './companies/ company.entity';
 
 @Module({
   imports: [
+    ProdutosServicosModule,
     ClientesFornecedoresModule,
     CompaniesModule,
     ConfigModule.forRoot({

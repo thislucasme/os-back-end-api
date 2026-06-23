@@ -1,7 +1,7 @@
 import {
-  BadRequestException,
-  Injectable,
-  NotFoundException,
+    BadRequestException,
+    Injectable,
+    NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
@@ -14,156 +14,156 @@ import { Company } from 'src/companies/ company.entity';
 
 @Injectable()
 export class ClientesFornecedoresService {
-  constructor(
-    @InjectRepository(ClienteFornecedor)
-    private readonly repo: Repository<ClienteFornecedor>,
+    constructor(
+        @InjectRepository(ClienteFornecedor)
+        private readonly repo: Repository<ClienteFornecedor>,
 
-    @InjectRepository(User)
-    private readonly userRepo: Repository<User>,
+        @InjectRepository(User)
+        private readonly userRepo: Repository<User>,
 
-    @InjectRepository(Company)
-    private readonly companyRepo: Repository<Company>,
-  ) {}
+        @InjectRepository(Company)
+        private readonly companyRepo: Repository<Company>,
+    ) { }
 
-private async getCompanyByUserId(userId: number) {
-  const user = await this.userRepo.findOne({
-    where: { id: userId },
-    relations: {
-      company: true,
-    },
-  });
+    private async getCompanyByUserId(userId: number) {
+        const user = await this.userRepo.findOne({
+            where: { id: userId },
+            relations: {
+                company: true,
+            },
+        });
 
-  if (!user || !user.company) {
-    throw new BadRequestException('Usuário não possui empresa vinculada.');
-  }
+        if (!user || !user.company) {
+            throw new BadRequestException('Usuário não possui empresa vinculada.');
+        }
 
-  return user.company;
-}
-
-  async create(userId: number, dto: CreateClienteFornecedorDto) {
-    const company = await this.getCompanyByUserId(userId);
-
-    const exists = await this.repo.findOne({
-      where: {
-        companyId: company.id,
-        documento: dto.documento,
-      },
-    });
-
-    if (exists) {
-      throw new BadRequestException('Já existe um cadastro com este CPF/CNPJ.');
+        return user.company;
     }
 
-    const item = this.repo.create({
-      ...dto,
-      companyId: company.id,
-    });
+    async create(userId: number, dto: CreateClienteFornecedorDto) {
+        const company = await this.getCompanyByUserId(userId);
 
-    return this.repo.save(item);
-  }
+        const exists = await this.repo.findOne({
+            where: {
+                companyId: company.id,
+                documento: dto.documento,
+            },
+        });
 
-  async findAll(
-    userId: number,
-    query: {
-      search?: string;
-      page?: string;
-      limit?: string;
-    },
-  ) {
-    const company = await this.getCompanyByUserId(userId);
+        if (exists) {
+            throw new BadRequestException('Já existe um cadastro com este CPF/CNPJ.');
+        }
 
-    const page = Number(query.page) || 1;
-    const limit = Number(query.limit) || 10;
-    const skip = (page - 1) * limit;
-    const search = query.search?.trim();
+        const item = this.repo.create({
+            ...dto,
+            companyId: company.id,
+        });
 
-    const qb = this.repo
-      .createQueryBuilder('cadastro')
-      .where('cadastro.companyId = :companyId', {
-        companyId: company.id,
-      });
+        return this.repo.save(item);
+    }
 
-    if (search) {
-      qb.andWhere(
-        `(
+    async findAll(
+        userId: number,
+        query: {
+            search?: string;
+            page?: string;
+            limit?: string;
+        },
+    ) {
+        const company = await this.getCompanyByUserId(userId);
+
+        const page = Number(query.page) || 1;
+        const limit = Number(query.limit) || 10;
+        const skip = (page - 1) * limit;
+        const search = query.search?.trim();
+
+        const qb = this.repo
+            .createQueryBuilder('cadastro')
+            .where('cadastro.companyId = :companyId', {
+                companyId: company.id,
+            });
+
+        if (search) {
+            qb.andWhere(
+                `(
           cadastro.nome LIKE :search OR
           cadastro.documento LIKE :search OR
           cadastro.email LIKE :search OR
           cadastro.telefone LIKE :search OR
           cadastro.whatsapp LIKE :search
         )`,
-        {
-          search: `%${search}%`,
-        },
-      );
+                {
+                    search: `%${search}%`,
+                },
+            );
+        }
+
+        const [data, total] = await qb
+            .orderBy('cadastro.id', 'DESC')
+            .skip(skip)
+            .take(limit)
+            .getManyAndCount();
+
+        return {
+            data,
+            total,
+            page,
+            limit,
+            totalPages: Math.max(1, Math.ceil(total / limit)),
+        };
     }
 
-    const [data, total] = await qb
-      .orderBy('cadastro.id', 'DESC')
-      .skip(skip)
-      .take(limit)
-      .getManyAndCount();
+    async findOne(userId: number, id: number) {
+        const company = await this.getCompanyByUserId(userId);
 
-    return {
-      data,
-      total,
-      page,
-      limit,
-      totalPages: Math.max(1, Math.ceil(total / limit)),
-    };
-  }
+        const item = await this.repo.findOne({
+            where: {
+                id,
+                companyId: company.id,
+            },
+        });
 
-  async findOne(userId: number, id: number) {
-    const company = await this.getCompanyByUserId(userId);
+        if (!item) {
+            throw new NotFoundException('Cadastro não encontrado.');
+        }
 
-    const item = await this.repo.findOne({
-      where: {
-        id,
-        companyId: company.id,
-      },
-    });
-
-    if (!item) {
-      throw new NotFoundException('Cadastro não encontrado.');
+        return item;
     }
 
-    return item;
-  }
+    async update(
+        userId: number,
+        id: number,
+        dto: UpdateClienteFornecedorDto,
+    ) {
+        const company = await this.getCompanyByUserId(userId);
 
-  async update(
-    userId: number,
-    id: number,
-    dto: UpdateClienteFornecedorDto,
-  ) {
-    const company = await this.getCompanyByUserId(userId);
+        const item = await this.findOne(userId, id);
 
-    const item = await this.findOne(userId, id);
+        if (dto.documento && dto.documento !== item.documento) {
+            const exists = await this.repo.findOne({
+                where: {
+                    companyId: company.id,
+                    documento: dto.documento,
+                },
+            });
 
-    if (dto.documento && dto.documento !== item.documento) {
-      const exists = await this.repo.findOne({
-        where: {
-          companyId: company.id,
-          documento: dto.documento,
-        },
-      });
+            if (exists) {
+                throw new BadRequestException('Já existe um cadastro com este CPF/CNPJ.');
+            }
+        }
 
-      if (exists) {
-        throw new BadRequestException('Já existe um cadastro com este CPF/CNPJ.');
-      }
+        Object.assign(item, dto);
+
+        return this.repo.save(item);
     }
 
-    Object.assign(item, dto);
+    async remove(userId: number, id: number) {
+        const item = await this.findOne(userId, id);
 
-    return this.repo.save(item);
-  }
+        await this.repo.remove(item);
 
-  async remove(userId: number, id: number) {
-    const item = await this.findOne(userId, id);
-
-    await this.repo.remove(item);
-
-    return {
-      message: 'Cadastro removido com sucesso.',
-    };
-  }
+        return {
+            message: 'Cadastro removido com sucesso.',
+        };
+    }
 }
