@@ -1,3 +1,13 @@
+import { DespesasModule } from './despesas/despesas.module';
+import { TransferenciasModule } from './transferencias/transferencias.module';
+import { MovimentacoesModule } from './movimentacoes/movimentacoes.module';
+import { ContasPagarModule } from './contas-pagar/contas-pagar.module';
+import { ContasReceberModule } from './contas-receber/contas-receber.module';
+import { ContasFinanceirasModule } from './financeiro/contas-financeiras/contas-financeiras.module';
+import { ReportsModule } from './reports/reports.module';
+import { FuncionariosModule } from './funcionarios/funcionarios.module';
+import { PropostasModule } from './propostas/propostas.module';
+import { OrdensServicoModule } from './ordens-servico/ordens-servico.module';
 import { ProdutosServicosModule } from './produtos-servicos/produtos-servicos.module';
 import { ClientesFornecedoresModule } from './clientes-fornecedores/clientes-fornecedores.module';
 import { CompaniesModule } from './companies/companies.module';
@@ -13,6 +23,16 @@ import { Company } from './companies/ company.entity';
 
 @Module({
   imports: [
+    DespesasModule,
+    TransferenciasModule,
+    MovimentacoesModule,
+    ContasPagarModule,
+    ContasReceberModule,
+    ContasFinanceirasModule,
+    ReportsModule,
+    FuncionariosModule,
+    PropostasModule,
+    OrdensServicoModule,
     ProdutosServicosModule,
     ClientesFornecedoresModule,
     CompaniesModule,
