@@ -64,15 +64,15 @@ export function propostaPdfTemplate(proposta: Proposta): string {
   const cliente = proposta.cliente;
   const os = proposta.ordemServico;
 
-console.log("OS:", os?.id, os?.numero);
-console.log("ANEXOS DA OS:", os?.anexos);
+  console.log("OS:", os?.id, os?.numero);
+  console.log("ANEXOS DA OS:", os?.anexos);
 
-const fotoPrincipal =
-  os?.anexos?.[0]?.url
-    ? toAbsoluteUrl(os.anexos[0].url)
-    : null;
+  const fotosServico = (os?.anexos || [])
+    .filter((anexo: any) => anexo?.url)
+    .slice(0, 3)
+    .map((anexo: any) => toAbsoluteUrl(anexo.url));
 
-console.log("FOTO PRINCIPAL:", fotoPrincipal);
+  console.log("FOTOS DO SERVIÇO:", fotosServico);
 
   const rows = (proposta.itens || [])
     .map((item: any, index: number) => {
@@ -272,19 +272,52 @@ body {
   align-items: start;
 }
 
-.service-photo {
+.service-photos {
   height: 55mm;
+  display: grid;
+  gap: 2mm;
+}
+
+.service-photos.has-1 {
+  grid-template-columns: 1fr;
+}
+
+.service-photos.has-2 {
+  grid-template-columns: 1fr 1fr;
+}
+
+.service-photos.has-3 {
+  grid-template-columns: 1.2fr 0.8fr;
+  grid-template-rows: 1fr 1fr;
+}
+
+.service-photos.has-3 .photo-item:first-child {
+  grid-row: 1 / 3;
+}
+
+.photo-item {
   border: 1px solid #cfd6dd;
   border-radius: 5px;
   overflow: hidden;
   background: #f5f5f5;
 }
 
-.service-photo img {
+.photo-item img {
   width: 100%;
   height: 100%;
   object-fit: cover;
   display: block;
+}
+
+.photo-placeholder {
+  width: 100%;
+  height: 100%;
+  font-size: 11px;
+  color: #999999;
+  padding: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .service-text {
@@ -438,11 +471,13 @@ tbody tr:nth-child(even) {
               ? `<p>WhatsApp: ${safe(company.whatsapp || company.phone)}</p>`
               : ''
           }
+
           ${
             company?.companyEmail
               ? `<p>Email: ${safe(company.companyEmail)}</p>`
               : ''
           }
+
           ${
             company?.instagram
               ? `<p>Instagram: ${safe(company.instagram)}</p>`
@@ -511,13 +546,24 @@ tbody tr:nth-child(even) {
 
       <div class="service-body">
         <div class="service-layout">
-<div class="service-photo">
-  ${
-    fotoPrincipal
-      ? `<img src="${safe(fotoPrincipal)}" alt="Foto do serviço">`
-      : `<div style="font-size:11px;color:#999;padding:12px;">Sem foto</div>`
-  }
-</div>
+
+          <div class="service-photos has-${fotosServico.length || 1}">
+            ${
+              fotosServico.length
+                ? fotosServico
+                    .map((foto: string, index: number) => `
+                      <div class="photo-item">
+                        <img src="${safe(foto)}" alt="Foto do serviço ${index + 1}">
+                      </div>
+                    `)
+                    .join('')
+                : `
+                  <div class="photo-item">
+                    <div class="photo-placeholder">Sem foto</div>
+                  </div>
+                `
+            }
+          </div>
 
           <div class="service-text">
             <h3>${safe(proposta.titulo || os?.titulo || 'Serviço')}</h3>
@@ -525,12 +571,13 @@ tbody tr:nth-child(even) {
             <p>
               ${textoComQuebra(
                 proposta.descricao ||
-                  os?.diagnosticoTecnico ||
-                  os?.defeitoRelatado ||
-                  '',
+                os?.diagnosticoTecnico ||
+                os?.defeitoRelatado ||
+                '',
               )}
             </p>
           </div>
+
         </div>
       </div>
     </section>
@@ -588,8 +635,8 @@ tbody tr:nth-child(even) {
     <div class="thanks">
       ${textoComQuebra(
         proposta.mensagemFinal ||
-          os?.mensagemFinal ||
-          'Agradecemos a confiança.',
+        os?.mensagemFinal ||
+        'Agradecemos a confiança.',
       )}
     </div>
 
