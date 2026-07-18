@@ -9,6 +9,8 @@ import { Repository } from 'typeorm';
 import { UpdatePropostaDto } from 'src/ordens-servico/dto/update-proposta.dto';
 import { Proposta, PropostaStatus } from 'src/ordens-servico/entities/proposta.entity';
 import { CreatePropostaDto } from 'src/ordens-servico/dto/create-proposta.dto';
+import { UsersService } from 'src/users/users.service';
+import { User } from 'src/users/user.entity';
 
 @Injectable()
 export class PropostasService {
@@ -18,21 +20,45 @@ export class PropostasService {
 
     @InjectRepository(OrdemServico)
     private readonly osRepo: Repository<OrdemServico>,
+
+        @InjectRepository(User)
+    private readonly userRepo: Repository<User>,
   ) {}
 
-  async findAll(companyId?: number) {
-    return this.propostaRepo.find({
-      where: companyId ? { companyId } : {},
-      relations: {
-        cliente: true,
-        ordemServico: true,
-        itens: {
-          produtoServico: true,
-        },
-      },
-      order: { id: 'DESC' },
-    });
+  async getCompanyId(userId: number): Promise<number> {
+  const user = await this.userRepo.findOne({
+    where: {
+      id: userId,
+    },
+  });
+
+  if (!user) {
+    throw new NotFoundException('Usuário não encontrado');
   }
+
+  return user.companyId ?? 1;
+}
+
+async findAll(userId: number) {
+
+  const companyId = await this.getCompanyId(userId);
+
+  return this.propostaRepo.find({
+    where: {
+      companyId,
+    },
+    relations: {
+      cliente: true,
+      ordemServico: true,
+      itens: {
+        produtoServico: true,
+      },
+    },
+    order: {
+      id: 'DESC',
+    },
+  });
+}
 
   async findOne(id: number) {
     const proposta = await this.propostaRepo.findOne({

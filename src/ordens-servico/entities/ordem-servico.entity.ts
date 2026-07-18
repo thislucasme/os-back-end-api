@@ -42,6 +42,7 @@ export class OrdemServico {
   @PrimaryGeneratedColumn()
   id!: number;
 
+  @Index()
   @Column()
   companyId!: number;
 
@@ -63,7 +64,7 @@ export class OrdemServico {
   @JoinColumn({ name: 'responsavelId' })
   responsavel!: User | null;
 
-  @Column({ unique: true })
+  @Column()
   numero!: string;
 
   @Column()

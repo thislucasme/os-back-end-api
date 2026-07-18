@@ -2,68 +2,106 @@ import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
 import {
   IsDateString,
-  IsNotEmpty,
   IsNumber,
   IsOptional,
   IsString,
   Min,
 } from 'class-validator';
 
+
 export class CreateContaReceberDto {
+
+
   @ApiProperty({
-    example: 'João da Silva',
-    description: 'Nome do cliente ou responsável pela conta a receber.',
+    example: 15,
+    description:
+      'ID do cliente vinculado à conta a receber.',
   })
-  @IsString()
-  @IsNotEmpty()
-  clienteNome!: string;
+  @IsNumber()
+  @Type(() => Number)
+  @Min(1)
+  clienteId!: number;
+
+
 
   @ApiPropertyOptional({
-    example: '12345678900',
-    description: 'CPF ou CNPJ do cliente.',
+    example: 25,
+    description:
+      'ID da ordem de serviço vinculada. Opcional.',
   })
   @IsOptional()
-  @IsString()
-  clienteDocumento?: string;
+  @IsNumber()
+  @Type(() => Number)
+  ordemServicoId?: number;
+
+
 
   @ApiPropertyOptional({
-    example: 'Venda de produto ou prestação de serviço.',
-    description: 'Descrição da conta a receber.',
+    example:
+      'Serviço de manutenção preventiva.',
+    description:
+      'Descrição da conta.',
   })
   @IsOptional()
   @IsString()
   descricao?: string;
 
+
+
   @ApiProperty({
-    example: 350.75,
-    description: 'Valor original da conta a receber.',
+    example: 3000,
+    description:
+      'Valor total da conta.',
   })
   @IsNumber()
-  @Min(0.01)
   @Type(() => Number)
+  @Min(0.01)
   valorOriginal!: number;
 
+
+
   @ApiProperty({
-    example: '2026-06-30',
-    description: 'Data de vencimento da conta.',
+    example: 3,
+    description:
+      'Quantidade de parcelas.',
+  })
+  @IsNumber()
+  @Type(() => Number)
+  @Min(1)
+  parcelas!: number;
+
+
+
+  @ApiProperty({
+    example:'2026-08-10',
+    description:
+      'Data do primeiro vencimento.',
   })
   @IsDateString()
-  dataVencimento!: string;
+  primeiroVencimento!: string;
+
+
 
   @ApiPropertyOptional({
-    example: '2026-06-25',
-    description: 'Data de emissão da conta.',
+    example:'2026-07-15',
+    description:
+      'Data de emissão.',
   })
   @IsOptional()
   @IsDateString()
   dataEmissao?: string;
 
+
+
   @ApiPropertyOptional({
-    example: 1,
-    description: 'ID da conta financeira vinculada ao recebimento.',
+    example:1,
+    description:
+      'Conta financeira padrão.',
   })
   @IsOptional()
   @IsNumber()
   @Type(() => Number)
   contaFinanceiraId?: number;
+
+
 }

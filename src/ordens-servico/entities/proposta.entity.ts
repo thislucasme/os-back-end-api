@@ -48,7 +48,7 @@ export class Proposta {
   @JoinColumn({ name: 'clienteId' })
   cliente!: ClienteFornecedor | null;
 
-  @Column({ unique: true })
+  @Column()
   numero!: string;
 
   @Column()

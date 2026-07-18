@@ -240,7 +240,11 @@ async create(dto: CreateOrdemServicoDto, userId: number) {
         userId,
       );
 
-    Object.assign(os, dto);
+  Object.assign(os, {
+  ...dto,
+  companyId: os.companyId,
+  numero: os.numero,
+});
 
     const saved =
       await this.osRepo.save(os);

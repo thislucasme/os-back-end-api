@@ -9,17 +9,22 @@ import {
   Patch,
   Post,
   Query,
+  Request,
+  UseGuards,
 } from '@nestjs/common';
 import { PropostasService } from './propostas.service';
 import { CreatePropostaDto } from 'src/ordens-servico/dto/create-proposta.dto';
 import { UpdatePropostaDto } from 'src/ordens-servico/dto/update-proposta.dto';
+import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
 @Controller('propostas')
 export class PropostasController {
-  constructor(private readonly service: PropostasService) {}
+  constructor(private readonly service: PropostasService) { }
 
+  @UseGuards(JwtAuthGuard)
   @Get()
-  findAll(@Query('companyId') companyId?: string) {
-    return this.service.findAll(companyId ? Number(companyId) : undefined);
+  findAll(@Request() req) {
+    console.log(req.user)
+    return this.service.findAll(req.user.id);
   }
 
   @Get(':id')

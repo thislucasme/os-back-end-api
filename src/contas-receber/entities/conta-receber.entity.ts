@@ -9,8 +9,13 @@ import {
   UpdateDateColumn,
   ValueTransformer,
 } from 'typeorm';
-import { Recebimento } from './recebimento.entity';
+
 import { ContaFinanceira } from 'src/financeiro/contas-financeiras/entities/conta-financeira.entity';
+import { OrdemServico } from 'src/ordens-servico/entities/ordem-servico.entity';
+
+import { ContaReceberParcela } from './conta-receber-parcela.entity';
+import { ClienteFornecedor } from 'src/clientes-fornecedores/entities/cliente-fornecedor.entity';
+
 
 export enum StatusContaReceber {
   ABERTA = 'ABERTA',
@@ -19,109 +24,205 @@ export enum StatusContaReceber {
   CANCELADA = 'CANCELADA',
 }
 
+
+
 const decimalTransformer: ValueTransformer = {
+
   to: (value?: number | null) => value,
+
   from: (value?: string | number | null) => {
-    if (value === null || value === undefined) {
+
+    if(value === null || value === undefined){
       return 0;
     }
 
     return Number(value);
-  },
+  }
+
 };
+
+
 
 @Entity('contas_receber')
 export class ContaReceber {
+
+
   @PrimaryGeneratedColumn()
   id!: number;
 
+
+
   @Column({
-    name: 'company_id',
+    name:'company_id'
   })
   companyId!: number;
 
+
+
+  /**
+   * CLIENTE
+   */
   @Column({
-    name: 'conta_financeira_id',
-    nullable: true,
+    name:'cliente_id'
+  })
+  clienteId!: number;
+
+
+
+  @ManyToOne(
+    ()=>ClienteFornecedor,
+    {
+      nullable:false,
+      onDelete:'RESTRICT'
+    }
+  )
+  @JoinColumn({
+    name:'cliente_id'
+  })
+  cliente!: ClienteFornecedor;
+
+
+
+
+  /**
+   * OS OPCIONAL
+   */
+  @Column({
+    name:'ordem_servico_id',
+    nullable:true
+  })
+  ordemServicoId?: number | null;
+
+
+
+  @ManyToOne(
+    ()=>OrdemServico,
+    {
+      nullable:true,
+      onDelete:'SET NULL'
+    }
+  )
+  @JoinColumn({
+    name:'ordem_servico_id'
+  })
+  ordemServico?: OrdemServico | null;
+
+
+
+
+  /**
+   * CONTA FINANCEIRA PADRÃO
+   */
+  @Column({
+    name:'conta_financeira_id',
+    nullable:true
   })
   contaFinanceiraId?: number | null;
 
-  @ManyToOne(() => ContaFinanceira, {
-    nullable: true,
-    onDelete: 'SET NULL',
-  })
+
+
+  @ManyToOne(
+    ()=>ContaFinanceira,
+    {
+      nullable:true,
+      onDelete:'SET NULL'
+    }
+  )
   @JoinColumn({
-    name: 'conta_financeira_id',
+    name:'conta_financeira_id'
   })
   contaFinanceira?: ContaFinanceira | null;
 
-  @Column({
-    length: 150,
-  })
-  clienteNome!: string;
+
+
 
   @Column({
-    type: 'varchar',
-    length: 30,
-    nullable: true,
-  })
-  clienteDocumento?: string | null;
-
-  @Column({
-    type: 'varchar',
-    length: 255,
-    nullable: true,
+    type:'varchar',
+    length:255,
+    nullable:true
   })
   descricao?: string | null;
 
+
+
+
   @Column({
-    type: 'decimal',
-    precision: 15,
-    scale: 2,
-    transformer: decimalTransformer,
+    type:'decimal',
+    precision:15,
+    scale:2,
+    transformer:decimalTransformer
   })
   valorOriginal!: number;
 
+
+
+
   @Column({
-    type: 'decimal',
-    precision: 15,
-    scale: 2,
-    default: 0,
-    transformer: decimalTransformer,
+    type:'decimal',
+    precision:15,
+    scale:2,
+    default:0,
+    transformer:decimalTransformer
   })
   valorRecebido!: number;
 
+
+
+
   @Column({
-    type: 'date',
+    type:'date'
   })
   dataVencimento!: string;
 
+
+
+
   @Column({
-    type: 'date',
-    nullable: true,
+    type:'date',
+    nullable:true
   })
   dataEmissao?: string | null;
 
+
+
+
   @Column({
-    type: 'enum',
-    enum: StatusContaReceber,
-    default: StatusContaReceber.ABERTA,
+    type:'enum',
+    enum:StatusContaReceber,
+    default:StatusContaReceber.ABERTA
   })
   status!: StatusContaReceber;
 
+
+
+
+  /**
+   * PARCELAS
+   */
   @OneToMany(
-    () => Recebimento,
-    recebimento => recebimento.contaReceber,
+    ()=>ContaReceberParcela,
+    parcela=>parcela.contaReceber,
+    {
+      cascade:true
+    }
   )
-  recebimentos!: Recebimento[];
+  parcelas!: ContaReceberParcela[];
+
+
+
+
 
   @CreateDateColumn({
-    name: 'created_at',
+    name:'created_at'
   })
   createdAt!: Date;
 
+
+
   @UpdateDateColumn({
-    name: 'updated_at',
+    name:'updated_at'
   })
   updatedAt!: Date;
+
+
 }

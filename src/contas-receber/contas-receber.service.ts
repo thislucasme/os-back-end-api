@@ -5,34 +5,40 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
+import { ContaFinanceira } from 'src/financeiro/contas-financeiras/entities/conta-financeira.entity';
+import { MovimentacoesService } from 'src/movimentacoes/movimentacoes.service';
 import { User } from 'src/users/user.entity';
 import { ILike, Repository } from 'typeorm';
 import { CreateContaReceberDto } from './dto/create-conta-receber.dto';
+import { ReceberParcelaDto } from './dto/receber-parcela.dto';
 import { UpdateContaReceberDto } from './dto/update-conta-receber.dto';
-import { ReceberContaDto } from './dto/receber-conta.dto';
+import { ContaReceberParcela } from './entities/conta-receber-parcela.entity';
+
 import {
   ContaReceber,
   StatusContaReceber,
 } from './entities/conta-receber.entity';
 import { Recebimento } from './entities/recebimento.entity';
-import { ContaFinanceira } from 'src/financeiro/contas-financeiras/entities/conta-financeira.entity';
-import { MovimentacoesService } from 'src/movimentacoes/movimentacoes.service';
 import { OrigemMovimentacaoFinanceira } from 'src/movimentacoes/entities/movimentacao-financeira.entity';
 
 @Injectable()
 export class ContasReceberService {
-constructor(
-  @InjectRepository(ContaReceber)
-  private readonly repository: Repository<ContaReceber>,
+  constructor(
+    @InjectRepository(ContaReceber)
+    private readonly repository: Repository<ContaReceber>,
 
-  @InjectRepository(Recebimento)
-  private readonly recebimentosRepository: Repository<Recebimento>,
+    @InjectRepository(Recebimento)
+    private readonly recebimentosRepository: Repository<Recebimento>,
 
-  @InjectRepository(User)
-  private readonly usersRepository: Repository<User>,
+    @InjectRepository(User)
+    private readonly usersRepository: Repository<User>,
 
-  private readonly movimentacoesService: MovimentacoesService,
-) {}
+    @InjectRepository(ContaReceberParcela)
+    private readonly parcelasRepository:
+      Repository<ContaReceberParcela>,
+
+    private readonly movimentacoesService: MovimentacoesService,
+  ) { }
   private async getCompanyIdFromRequestUser(
     requestUser: any,
   ): Promise<number> {
@@ -107,27 +113,132 @@ constructor(
 
   async create(
     requestUser: any,
-    dto: CreateContaReceberDto,
+    dto: CreateContaReceberDto
   ) {
+
     const companyId =
       await this.getCompanyIdFromRequestUser(
-        requestUser,
+        requestUser
       );
 
-    const conta = this.repository.create({
-      companyId,
-      clienteNome: dto.clienteNome,
-      clienteDocumento: dto.clienteDocumento ?? null,
-      descricao: dto.descricao ?? null,
-      valorOriginal: dto.valorOriginal,
-      valorRecebido: 0,
-      dataVencimento: dto.dataVencimento,
-      dataEmissao: dto.dataEmissao ?? this.today(),
-      contaFinanceiraId: dto.contaFinanceiraId ?? null,
-      status: StatusContaReceber.ABERTA,
+
+    const conta =
+      this.repository.create({
+
+        companyId,
+
+        clienteId: dto.clienteId,
+
+        ordemServicoId:
+          dto.ordemServicoId ?? null,
+
+        descricao:
+          dto.descricao ?? null,
+
+        valorOriginal:
+          dto.valorOriginal,
+
+        valorRecebido: 0,
+
+        dataVencimento:
+          dto.primeiroVencimento,
+
+        dataEmissao:
+          this.today(),
+
+        contaFinanceiraId:
+          dto.contaFinanceiraId ?? null,
+
+        status:
+          StatusContaReceber.ABERTA
+
+      });
+
+
+    const contaSalva =
+      await this.repository.save(conta);
+
+
+
+    const parcelas =
+      Number(dto.parcelas || 1);
+
+
+
+    const valorParcela =
+      Number(
+        (dto.valorOriginal / parcelas)
+          .toFixed(2)
+      );
+
+
+
+    const parcelasCriadas: ContaReceberParcela[] = [];
+
+
+    for (
+      let i = 1;
+      i <= parcelas;
+      i++
+    ) {
+
+      const data =
+        new Date(dto.primeiroVencimento);
+
+
+      data.setMonth(
+        data.getMonth() + i - 1
+      );
+
+
+      const parcela =
+        this.parcelasRepository.create({
+
+          contaReceberId:
+            contaSalva.id,
+
+          numero: i,
+
+          valor: valorParcela,
+
+          vencimento:
+            data.toISOString()
+              .slice(0, 10),
+
+          paga: false
+
+        });
+
+
+      parcelasCriadas.push(
+        parcela
+      );
+
+    }
+
+
+    await this.parcelasRepository.save(
+      parcelasCriadas
+    );
+
+
+
+    return this.repository.findOne({
+
+      where: {
+        id: contaSalva.id,
+        companyId
+      },
+
+      relations: {
+        cliente: true,
+        parcelas: true,
+        ordemServico: true
+      }
+
     });
 
-    return this.repository.save(conta);
+
   }
 
   async findAll(
@@ -139,65 +250,95 @@ constructor(
       status?: string;
     },
   ) {
+
     const companyId =
       await this.getCompanyIdFromRequestUser(
         requestUser,
       );
+
 
     const page = Math.max(
       Number(params.page || 1),
       1,
     );
 
+
     const limit = Math.min(
       Math.max(Number(params.limit || 10), 1),
       100,
     );
 
+
     const skip = (page - 1) * limit;
 
-    const status = this.validarStatus(
-      params.status,
-    );
+
+    const status =
+      this.validarStatus(params.status);
+
+
 
     const baseWhere: any = {
       companyId,
+
       ...(status
         ? {
-            status,
-          }
+          status,
+        }
         : {}),
     };
 
-    const search = params.search?.trim();
+
+
+    const search =
+      params.search?.trim();
+
+
 
     const where: any = search
       ? [
-          {
-            ...baseWhere,
-            clienteNome: ILike(`%${search}%`),
-          },
-          {
-            ...baseWhere,
-            clienteDocumento: ILike(`%${search}%`),
-          },
-          {
-            ...baseWhere,
-            descricao: ILike(`%${search}%`),
-          },
-        ]
+        {
+          ...baseWhere,
+
+          cliente: {
+            nome: ILike(`%${search}%`)
+          }
+        },
+
+        {
+          ...baseWhere,
+
+          descricao:
+            ILike(`%${search}%`)
+        },
+      ]
+
       : baseWhere;
+
+
 
     const [data, total] =
       await this.repository.findAndCount({
+
         where,
+
+        relations: {
+          cliente: true,
+          ordemServico: true,
+          parcelas: true,
+        },
+
         skip,
+
         take: limit,
+
         order: {
           dataVencimento: 'ASC',
           id: 'DESC',
         },
+
       });
+
+
 
     return {
       data,
@@ -206,40 +347,59 @@ constructor(
       limit,
       totalPages: Math.ceil(total / limit),
     };
+
   }
 
   async findOne(
     requestUser: any,
     id: number,
   ) {
+
     const companyId =
       await this.getCompanyIdFromRequestUser(
-        requestUser,
+        requestUser
       );
 
-    const conta = await this.repository.findOne({
-      where: {
-        id,
-        companyId,
-      },
-      relations: {
-        recebimentos: true,
-        contaFinanceira: true,
-      },
-      order: {
-        recebimentos: {
-          id: 'DESC',
+
+    const conta =
+      await this.repository.findOne({
+
+        where: {
+          id,
+          companyId,
         },
-      },
-    });
+
+
+        relations: {
+
+          cliente: true,
+
+          ordemServico: true,
+
+          parcelas: {
+            recebimentos: true,
+          },
+
+          contaFinanceira: true,
+
+        },
+
+
+      });
+
+
 
     if (!conta) {
+
       throw new NotFoundException(
-        'Conta a receber não encontrada.',
+        'Conta a receber não encontrada.'
       );
+
     }
 
+
     return conta;
+
   }
 
   async update(
@@ -247,214 +407,388 @@ constructor(
     id: number,
     dto: UpdateContaReceberDto,
   ) {
+
     const conta = await this.findOne(
       requestUser,
       id,
     );
 
+
     if (
       dto.valorOriginal !== undefined &&
       Number(dto.valorOriginal) < Number(conta.valorRecebido)
     ) {
+
       throw new BadRequestException(
         'O valor original não pode ser menor que o valor já recebido.',
       );
+
     }
 
+
+
     Object.assign(conta, {
-      ...dto,
-      clienteDocumento:
-        dto.clienteDocumento !== undefined
-          ? dto.clienteDocumento
-          : conta.clienteDocumento,
+
+      clienteId:
+        dto.clienteId !== undefined
+          ? dto.clienteId
+          : conta.clienteId,
+
+
+      ordemServicoId:
+        dto.ordemServicoId !== undefined
+          ? dto.ordemServicoId
+          : conta.ordemServicoId,
+
+
       descricao:
         dto.descricao !== undefined
           ? dto.descricao
           : conta.descricao,
+
+
+      valorOriginal:
+        dto.valorOriginal !== undefined
+          ? dto.valorOriginal
+          : conta.valorOriginal,
+
+
+      dataVencimento:
+        dto.dataVencimento !== undefined
+          ? dto.dataVencimento
+          : conta.dataVencimento,
+
+
+      dataEmissao:
+        dto.dataEmissao !== undefined
+          ? dto.dataEmissao
+          : conta.dataEmissao,
+
+
+      contaFinanceiraId:
+        dto.contaFinanceiraId !== undefined
+          ? dto.contaFinanceiraId
+          : conta.contaFinanceiraId,
+
     });
+
+
 
     if (
       dto.valorOriginal !== undefined &&
       conta.status !== StatusContaReceber.CANCELADA
     ) {
-      conta.status = this.definirStatusPeloRecebimento(
-        Number(conta.valorOriginal),
-        Number(conta.valorRecebido),
-      );
+
+      conta.status =
+        this.definirStatusPeloRecebimento(
+          Number(conta.valorOriginal),
+          Number(conta.valorRecebido),
+        );
+
     }
 
+
+
     return this.repository.save(conta);
+
   }
 
-async receber(
+async receberParcela(
   requestUser: any,
-  id: number,
-  dto: ReceberContaDto,
+  parcelaId: number,
+  dto: ReceberParcelaDto,
 ) {
+
   const companyId =
     await this.getCompanyIdFromRequestUser(
       requestUser,
     );
 
+
   return this.repository.manager.transaction(
     async manager => {
-      const contasRepository =
-        manager.getRepository(ContaReceber);
+
+
+      const parcelasRepository =
+        manager.getRepository(ContaReceberParcela);
+
 
       const recebimentosRepository =
         manager.getRepository(Recebimento);
 
+
       const contasFinanceirasRepository =
         manager.getRepository(ContaFinanceira);
 
-      const conta = await contasRepository.findOne({
-        where: {
-          id,
-          companyId,
-        },
-      });
 
-      if (!conta) {
+
+      const parcela =
+        await parcelasRepository.findOne({
+
+          where: {
+            id: parcelaId,
+          },
+
+          relations: {
+            contaReceber: true,
+          },
+
+        });
+
+
+
+      if (!parcela) {
         throw new NotFoundException(
-          'Conta a receber não encontrada.',
+          'Parcela não encontrada.',
         );
       }
 
-      if (conta.status === StatusContaReceber.CANCELADA) {
+
+
+      if (
+        parcela.contaReceber.companyId !== companyId
+      ) {
+
+        throw new ForbiddenException(
+          'Sem permissão.',
+        );
+
+      }
+
+
+
+      if (parcela.paga) {
+
         throw new BadRequestException(
-          'Não é possível receber uma conta cancelada.',
+          'Esta parcela já foi recebida.',
         );
+
       }
 
-      if (conta.status === StatusContaReceber.RECEBIDA) {
+
+
+
+      const valor =
+        Number(dto.valor);
+
+
+
+      if (valor <= 0) {
+
         throw new BadRequestException(
-          'Esta conta já foi recebida totalmente.',
+          'Valor inválido.',
         );
+
       }
 
-      const valorRecebidoAtual = Number(
-        conta.valorRecebido || 0,
-      );
 
-      const valorOriginal = Number(
-        conta.valorOriginal || 0,
-      );
 
-      const valorRecebimento = Number(
-        dto.valor,
-      );
-
-      if (valorRecebimento <= 0) {
-        throw new BadRequestException(
-          'O valor do recebimento deve ser maior que zero.',
-        );
-      }
-
-      const novoValorRecebido = this.roundMoney(
-        valorRecebidoAtual + valorRecebimento,
-      );
-
-      if (novoValorRecebido > valorOriginal) {
-        throw new BadRequestException(
-          'O valor recebido não pode ultrapassar o valor original da conta.',
-        );
-      }
 
       const contaFinanceiraId =
         dto.contaFinanceiraId ??
-        conta.contaFinanceiraId ??
-        null;
+        parcela.contaReceber.contaFinanceiraId;
+
+
+
 
       if (!contaFinanceiraId) {
+
         throw new BadRequestException(
-          'Informe a conta financeira para realizar o recebimento.',
+          'Informe a conta financeira.',
         );
+
       }
+
+
+
 
       const contaFinanceira =
         await contasFinanceirasRepository.findOne({
+
           where: {
             id: contaFinanceiraId,
             companyId,
           },
+
         });
 
+
+
+
       if (!contaFinanceira) {
+
         throw new BadRequestException(
-          'Conta financeira não encontrada para esta empresa.',
+          'Conta financeira não encontrada.',
         );
+
       }
+
+
+
+
+      // Atualiza saldo da conta financeira
 
       contaFinanceira.saldoAtual =
         this.roundMoney(
-          Number(contaFinanceira.saldoAtual || 0) +
-            valorRecebimento,
+          Number(contaFinanceira.saldoAtual || 0)
+          +
+          valor,
         );
+
+
 
       await contasFinanceirasRepository.save(
         contaFinanceira,
       );
 
+
+
+
+
+      // Cria recebimento
+
       const recebimento =
         recebimentosRepository.create({
+
           companyId,
-          contaReceberId: conta.id,
+
+          parcelaId:
+            parcela.id,
+
           contaFinanceiraId,
-          valor: valorRecebimento,
+
+          valor,
+
           dataRecebimento:
-            dto.dataRecebimento ?? this.today(),
+            dto.dataRecebimento ??
+            this.today(),
+
           formaPagamento:
             dto.formaPagamento ?? null,
+
           observacao:
             dto.observacao ?? null,
+
         });
+
+
 
       const recebimentoSalvo =
         await recebimentosRepository.save(
           recebimento,
         );
 
-      conta.valorRecebido = novoValorRecebido;
+
+
+
+
+
+      // Marca parcela como paga
+
+      parcela.paga = true;
+
+
+
+      await parcelasRepository.save(
+        parcela,
+      );
+
+
+
+
+
+
+
+      // Atualiza conta principal
+
+      const conta =
+        parcela.contaReceber;
+
+
+
+      conta.valorRecebido =
+        this.roundMoney(
+          Number(conta.valorRecebido || 0)
+          +
+          valor,
+        );
+
+
 
       conta.status =
         this.definirStatusPeloRecebimento(
-          valorOriginal,
-          novoValorRecebido,
+          Number(conta.valorOriginal),
+          Number(conta.valorRecebido),
         );
 
-      await contasRepository.save(conta);
+
+
+      await manager.save(
+        conta,
+      );
+
+
+
+
+
+
+
+      // REGISTRA MOVIMENTAÇÃO FINANCEIRA
 
       await this.movimentacoesService.registrarEntrada(
         {
+
           companyId,
+
           contaFinanceiraId,
-          valor: valorRecebimento,
-          origem: OrigemMovimentacaoFinanceira.CONTA_RECEBER,
-          referenciaId: recebimentoSalvo.id,
-          descricao: `Recebimento da conta a receber #${conta.id}`,
+
+          valor,
+
+          origem:
+            OrigemMovimentacaoFinanceira.CONTA_RECEBER,
+
+
+          referenciaId:
+            recebimentoSalvo.id,
+
+
+          descricao:
+            `Recebimento da parcela #${parcela.id} da conta a receber #${conta.id}`,
+
+
           dataMovimentacao:
-            dto.dataRecebimento ?? this.today(),
+            dto.dataRecebimento ??
+            this.today(),
+
         },
+
         manager,
       );
 
-      return contasRepository.findOne({
-        where: {
-          id: conta.id,
-          companyId,
+
+
+
+
+
+
+      return parcelasRepository.findOne({
+
+        where:{
+          id: parcela.id,
         },
-        relations: {
-          recebimentos: true,
-          contaFinanceira: true,
+
+        relations:{
+          recebimentos:true,
+          contaReceber:true,
         },
-        order: {
-          recebimentos: {
-            id: 'DESC',
-          },
-        },
+
       });
+
+
+
     },
   );
+
 }
 
   async remove(

@@ -1,7 +1,7 @@
 # Dependências
 node_modules/
 dist/
-
+uploads/
 # Variáveis de ambiente
 .env
 .env.*

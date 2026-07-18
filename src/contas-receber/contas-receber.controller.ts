@@ -8,6 +8,7 @@ import {
   Post,
   Query,
   Req,
+  Request,
   UseGuards,
 } from '@nestjs/common';
 import {
@@ -23,11 +24,12 @@ import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
 import { ContasReceberService } from './contas-receber.service';
 import { CreateContaReceberDto } from './dto/create-conta-receber.dto';
 import { UpdateContaReceberDto } from './dto/update-conta-receber.dto';
-import { ReceberContaDto } from './dto/receber-conta.dto';
+
 import {
   ContaReceber,
   StatusContaReceber,
 } from './entities/conta-receber.entity';
+import { ReceberParcelaDto } from './dto/receber-parcela.dto';
 
 @ApiTags('Contas a Receber')
 @ApiBearerAuth()
@@ -36,7 +38,7 @@ import {
 export class ContasReceberController {
   constructor(
     private readonly service: ContasReceberService,
-  ) {}
+  ) { }
 
   @Post()
   @ApiOperation({
@@ -176,43 +178,49 @@ export class ContasReceberController {
     );
   }
 
-  @Post(':id/receber')
-  @ApiOperation({
-    summary: 'Receber conta',
-    description: 'Registra um recebimento parcial ou total de uma conta a receber.',
-  })
-  @ApiParam({
-    name: 'id',
-    example: 1,
-    description: 'ID da conta a receber.',
-  })
-  @ApiBody({
-    type: ReceberContaDto,
-  })
-  @ApiResponse({
-    status: 201,
-    description: 'Recebimento registrado com sucesso.',
-    type: ContaReceber,
-  })
-  @ApiResponse({
-    status: 400,
-    description: 'Valor inválido, conta cancelada, já recebida ou recebimento maior que o saldo.',
-  })
-  @ApiResponse({
-    status: 404,
-    description: 'Conta a receber não encontrada.',
-  })
-  receber(
-    @Req() req,
-    @Param('id') id: string,
-    @Body() dto: ReceberContaDto,
-  ) {
-    return this.service.receber(
-      req.user,
-      Number(id),
-      dto,
-    );
-  }
+  @Post('parcelas/:id/receber')
+@ApiOperation({
+  summary: 'Receber parcela da conta',
+  description:
+    'Registra o pagamento de uma parcela específica da conta a receber.',
+})
+@ApiParam({
+  name:'id',
+  example:1,
+  description:
+    'ID da parcela da conta a receber.',
+})
+@ApiBody({
+  type:ReceberParcelaDto,
+})
+@ApiResponse({
+  status:201,
+  description:
+    'Parcela recebida com sucesso.',
+})
+@ApiResponse({
+  status:400,
+  description:
+    'Parcela já paga ou dados inválidos.',
+})
+@ApiResponse({
+  status:404,
+  description:
+    'Parcela não encontrada.',
+})
+receberParcela(
+  @Request() req,
+  @Param('id') id:string,
+  @Body() dto:ReceberParcelaDto,
+){
+
+  return this.service.receberParcela(
+    req.user,
+    Number(id),
+    dto,
+  );
+
+}
 
   @Delete(':id')
   @ApiOperation({
