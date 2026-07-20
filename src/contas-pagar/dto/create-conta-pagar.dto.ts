@@ -1,8 +1,8 @@
+// src/financeiro/contas-pagar/dto/create-conta-pagar.dto.ts
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
 import {
   IsDateString,
-  IsNotEmpty,
   IsNumber,
   IsOptional,
   IsString,
@@ -11,48 +11,59 @@ import {
 
 export class CreateContaPagarDto {
   @ApiProperty({
-    example: 'Fornecedor ABC',
-    description: 'Nome do fornecedor ou responsável pela conta.',
+    example: 15,
+    description: 'ID do fornecedor vinculado à conta a pagar.',
   })
-  @IsString()
-  @IsNotEmpty()
-  fornecedorNome!: string;
+  @IsNumber()
+  @Type(() => Number)
+  @Min(1)
+  fornecedorId!: number;
 
   @ApiPropertyOptional({
-    example: '12345678000199',
-    description: 'CPF ou CNPJ do fornecedor.',
+    example: 25,
+    description: 'ID da ordem de serviço vinculada. Opcional.',
   })
   @IsOptional()
-  @IsString()
-  fornecedorDocumento?: string;
+  @IsNumber()
+  @Type(() => Number)
+  ordemServicoId?: number;
 
   @ApiPropertyOptional({
     example: 'Compra de materiais para escritório.',
-    description: 'Descrição da conta a pagar.',
+    description: 'Descrição da conta.',
   })
   @IsOptional()
   @IsString()
   descricao?: string;
 
   @ApiProperty({
-    example: 500,
-    description: 'Valor original da conta a pagar.',
+    example: 3000,
+    description: 'Valor total da conta.',
   })
   @IsNumber()
-  @Min(0.01)
   @Type(() => Number)
+  @Min(0.01)
   valorOriginal!: number;
 
   @ApiProperty({
-    example: '2026-06-30',
-    description: 'Data de vencimento da conta.',
+    example: 3,
+    description: 'Quantidade de parcelas.',
+  })
+  @IsNumber()
+  @Type(() => Number)
+  @Min(1)
+  parcelas!: number;
+
+  @ApiProperty({
+    example: '2026-08-10',
+    description: 'Data do primeiro vencimento.',
   })
   @IsDateString()
-  dataVencimento!: string;
+  primeiroVencimento!: string;
 
   @ApiPropertyOptional({
-    example: '2026-06-25',
-    description: 'Data de emissão da conta.',
+    example: '2026-07-15',
+    description: 'Data de emissão.',
   })
   @IsOptional()
   @IsDateString()
@@ -60,7 +71,7 @@ export class CreateContaPagarDto {
 
   @ApiPropertyOptional({
     example: 1,
-    description: 'ID da conta financeira padrão para pagamento.',
+    description: 'Conta financeira padrão para pagamento.',
   })
   @IsOptional()
   @IsNumber()

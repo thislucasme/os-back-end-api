@@ -1,4 +1,4 @@
-import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+// src/financeiro/contas-pagar/entities/pagamento.entity.ts
 import {
   Column,
   CreateDateColumn,
@@ -8,7 +8,7 @@ import {
   PrimaryGeneratedColumn,
   ValueTransformer,
 } from 'typeorm';
-import { ContaPagar } from './conta-pagar.entity';
+import { ContaPagarParcela } from './conta-pagar-parcela.entity';
 import { ContaFinanceira } from 'src/financeiro/contas-financeiras/entities/conta-financeira.entity';
 
 const decimalTransformer: ValueTransformer = {
@@ -17,70 +17,39 @@ const decimalTransformer: ValueTransformer = {
     if (value === null || value === undefined) {
       return 0;
     }
-
     return Number(value);
   },
 };
 
 @Entity('pagamentos')
 export class Pagamento {
-  @ApiProperty({
-    example: 1,
-  })
   @PrimaryGeneratedColumn()
   id!: number;
 
-  @ApiProperty({
-    example: 1,
-  })
-  @Column({
-    name: 'company_id',
-  })
+  @Column({ name: 'company_id' })
   companyId!: number;
 
-  @ApiProperty({
-    example: 1,
-  })
-  @Column({
-    name: 'conta_pagar_id',
-  })
-  contaPagarId!: number;
+  @Column({ name: 'parcela_id' })
+  parcelaId!: number;
 
   @ManyToOne(
-    () => ContaPagar,
-    contaPagar => contaPagar.pagamentos,
-    {
-      onDelete: 'CASCADE',
-    },
+    () => ContaPagarParcela,
+    parcela => parcela.pagamentos,
+    { onDelete: 'CASCADE' },
   )
-  @JoinColumn({
-    name: 'conta_pagar_id',
-  })
-  contaPagar!: ContaPagar;
+  @JoinColumn({ name: 'parcela_id' })
+  parcela!: ContaPagarParcela;
 
-  @ApiPropertyOptional({
-    example: 1,
-    description: 'ID da conta financeira de onde saiu o dinheiro.',
-  })
-  @Column({
-    name: 'conta_financeira_id',
-    nullable: true,
-  })
+  @Column({ name: 'conta_financeira_id', nullable: true })
   contaFinanceiraId?: number | null;
 
   @ManyToOne(() => ContaFinanceira, {
     nullable: true,
     onDelete: 'SET NULL',
   })
-  @JoinColumn({
-    name: 'conta_financeira_id',
-  })
+  @JoinColumn({ name: 'conta_financeira_id' })
   contaFinanceira?: ContaFinanceira | null;
 
-  @ApiProperty({
-    example: 150,
-    description: 'Valor pago.',
-  })
   @Column({
     type: 'decimal',
     precision: 15,
@@ -89,41 +58,15 @@ export class Pagamento {
   })
   valor!: number;
 
-  @ApiProperty({
-    example: '2026-06-25',
-    description: 'Data do pagamento.',
-  })
-  @Column({
-    type: 'date',
-  })
+  @Column({ type: 'date' })
   dataPagamento!: string;
 
-  @ApiPropertyOptional({
-    example: 'PIX',
-    description: 'Forma de pagamento utilizada.',
-  })
-  @Column({
-    type: 'varchar',
-    length: 50,
-    nullable: true,
-  })
+  @Column({ type: 'varchar', length: 50, nullable: true })
   formaPagamento?: string | null;
 
-  @ApiPropertyOptional({
-    example: 'Pagamento parcial da conta.',
-  })
-  @Column({
-    type: 'varchar',
-    length: 255,
-    nullable: true,
-  })
+  @Column({ type: 'varchar', length: 255, nullable: true })
   observacao?: string | null;
 
-  @ApiProperty({
-    example: '2026-06-25T10:30:00.000Z',
-  })
-  @CreateDateColumn({
-    name: 'created_at',
-  })
+  @CreateDateColumn({ name: 'created_at' })
   createdAt!: Date;
 }

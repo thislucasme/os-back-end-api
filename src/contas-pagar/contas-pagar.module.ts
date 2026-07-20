@@ -7,6 +7,7 @@ import { ContaPagar } from './entities/conta-pagar.entity';
 import { Pagamento } from './entities/pagamento.entity';
 import { ContaFinanceira } from 'src/financeiro/contas-financeiras/entities/conta-financeira.entity';
 import { MovimentacoesModule } from 'src/movimentacoes/movimentacoes.module';
+import { ContaPagarParcela } from './entities/conta-pagar-parcela.entity';
 
 @Module({
   imports: [
@@ -15,6 +16,7 @@ import { MovimentacoesModule } from 'src/movimentacoes/movimentacoes.module';
       Pagamento,
       ContaFinanceira,
       User,
+      ContaPagarParcela
     ]),
     MovimentacoesModule
   ],

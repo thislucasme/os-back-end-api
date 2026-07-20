@@ -1,3 +1,4 @@
+// src/financeiro/contas-pagar/contas-pagar.controller.ts
 import {
   Body,
   Controller,
@@ -8,6 +9,7 @@ import {
   Post,
   Query,
   Req,
+  Request,
   UseGuards,
 } from '@nestjs/common';
 import {
@@ -23,7 +25,7 @@ import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
 import { ContasPagarService } from './contas-pagar.service';
 import { CreateContaPagarDto } from './dto/create-conta-pagar.dto';
 import { UpdateContaPagarDto } from './dto/update-conta-pagar.dto';
-import { PagarContaDto } from './dto/pagar-conta.dto';
+import { PagarParcelaDto } from './dto/pagar-parcela.dto';
 import {
   ContaPagar,
   StatusContaPagar,
@@ -34,14 +36,14 @@ import {
 @UseGuards(JwtAuthGuard)
 @Controller('contas-pagar')
 export class ContasPagarController {
-  constructor(
-    private readonly service: ContasPagarService,
-  ) {}
+  constructor(private readonly service: ContasPagarService) {}
 
+  // ========== CRIAR ==========
   @Post()
   @ApiOperation({
     summary: 'Criar conta a pagar',
-    description: 'Cria uma nova conta a pagar vinculada à empresa do usuário logado.',
+    description:
+      'Cria uma nova conta a pagar vinculada à empresa do usuário logado.',
   })
   @ApiBody({
     type: CreateContaPagarDto,
@@ -55,20 +57,16 @@ export class ContasPagarController {
     status: 403,
     description: 'Usuário inválido ou sem empresa vinculada.',
   })
-  create(
-    @Req() req,
-    @Body() dto: CreateContaPagarDto,
-  ) {
-    return this.service.create(
-      req.user,
-      dto,
-    );
+  create(@Req() req, @Body() dto: CreateContaPagarDto) {
+    return this.service.create(req.user, dto);
   }
 
+  // ========== LISTAR ==========
   @Get()
   @ApiOperation({
     summary: 'Listar contas a pagar',
-    description: 'Lista contas a pagar com paginação, busca e filtro por status.',
+    description:
+      'Lista contas a pagar da empresa do usuário logado com paginação, busca e filtro por status.',
   })
   @ApiQuery({
     name: 'page',
@@ -85,8 +83,8 @@ export class ContasPagarController {
   @ApiQuery({
     name: 'search',
     required: false,
-    example: 'Fornecedor',
-    description: 'Busca por fornecedor, documento ou descrição.',
+    example: 'Fornecedor ABC',
+    description: 'Busca por nome do fornecedor ou descrição.',
   })
   @ApiQuery({
     name: 'status',
@@ -97,22 +95,18 @@ export class ContasPagarController {
   })
   @ApiResponse({
     status: 200,
-    description: 'Lista retornada com sucesso.',
+    description: 'Lista de contas a pagar retornada com sucesso.',
   })
-  findAll(
-    @Req() req,
-    @Query() query: any,
-  ) {
-    return this.service.findAll(
-      req.user,
-      query,
-    );
+  findAll(@Req() req, @Query() query: any) {
+    return this.service.findAll(req.user, query);
   }
 
+  // ========== BUSCAR POR ID ==========
   @Get(':id')
   @ApiOperation({
     summary: 'Buscar conta a pagar por ID',
-    description: 'Retorna uma conta a pagar específica da empresa do usuário logado.',
+    description:
+      'Retorna uma conta a pagar específica da empresa do usuário logado.',
   })
   @ApiParam({
     name: 'id',
@@ -128,16 +122,11 @@ export class ContasPagarController {
     status: 404,
     description: 'Conta a pagar não encontrada.',
   })
-  findOne(
-    @Req() req,
-    @Param('id') id: string,
-  ) {
-    return this.service.findOne(
-      req.user,
-      Number(id),
-    );
+  findOne(@Req() req, @Param('id') id: string) {
+    return this.service.findOne(req.user, Number(id));
   }
 
+  // ========== ATUALIZAR ==========
   @Patch(':id')
   @ApiOperation({
     summary: 'Atualizar conta a pagar',
@@ -169,51 +158,49 @@ export class ContasPagarController {
     @Param('id') id: string,
     @Body() dto: UpdateContaPagarDto,
   ) {
-    return this.service.update(
-      req.user,
-      Number(id),
-      dto,
-    );
+    return this.service.update(req.user, Number(id), dto);
   }
 
-  @Post(':id/pagar')
+  // ========== PAGAR PARCELA ==========
+  @Post('parcelas/:id/pagar')
   @ApiOperation({
-    summary: 'Pagar conta',
-    description: 'Registra um pagamento parcial ou total de uma conta a pagar e baixa o saldo da conta financeira.',
+    summary: 'Pagar parcela da conta',
+    description:
+      'Registra o pagamento de uma parcela específica da conta a pagar.',
   })
   @ApiParam({
     name: 'id',
     example: 1,
-    description: 'ID da conta a pagar.',
+    description: 'ID da parcela da conta a pagar.',
   })
   @ApiBody({
-    type: PagarContaDto,
+    type: PagarParcelaDto,
   })
   @ApiResponse({
     status: 201,
-    description: 'Pagamento registrado com sucesso.',
-    type: ContaPagar,
+    description: 'Parcela paga com sucesso.',
   })
   @ApiResponse({
     status: 400,
-    description: 'Valor inválido, saldo insuficiente, conta cancelada, já paga ou pagamento maior que o saldo da conta.',
+    description: 'Parcela já paga, saldo insuficiente ou dados inválidos.',
+  })
+  @ApiResponse({
+    status: 403,
+    description: 'Sem permissão para esta parcela.',
   })
   @ApiResponse({
     status: 404,
-    description: 'Conta a pagar não encontrada.',
+    description: 'Parcela não encontrada.',
   })
-  pagar(
-    @Req() req,
+  pagarParcela(
+    @Request() req,
     @Param('id') id: string,
-    @Body() dto: PagarContaDto,
+    @Body() dto: PagarParcelaDto,
   ) {
-    return this.service.pagar(
-      req.user,
-      Number(id),
-      dto,
-    );
+    return this.service.pagarParcela(req.user, Number(id), dto);
   }
 
+  // ========== EXCLUIR ==========
   @Delete(':id')
   @ApiOperation({
     summary: 'Excluir conta a pagar',
@@ -234,16 +221,14 @@ export class ContasPagarController {
     },
   })
   @ApiResponse({
+    status: 400,
+    description: 'Não é possível excluir uma conta com parcelas pagas.',
+  })
+  @ApiResponse({
     status: 404,
     description: 'Conta a pagar não encontrada.',
   })
-  remove(
-    @Req() req,
-    @Param('id') id: string,
-  ) {
-    return this.service.remove(
-      req.user,
-      Number(id),
-    );
+  remove(@Req() req, @Param('id') id: string) {
+    return this.service.remove(req.user, Number(id));
   }
 }

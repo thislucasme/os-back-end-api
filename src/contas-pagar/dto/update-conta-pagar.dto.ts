@@ -1,74 +1,53 @@
+// src/financeiro/contas-pagar/dto/update-conta-pagar.dto.ts
 import { ApiPropertyOptional } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
 import {
   IsDateString,
-  IsEnum,
   IsNumber,
   IsOptional,
   IsString,
   Min,
 } from 'class-validator';
-import { StatusContaPagar } from '../entities/conta-pagar.entity';
 
 export class UpdateContaPagarDto {
-  @ApiPropertyOptional({
-    example: 'Fornecedor ABC',
-  })
+  @ApiPropertyOptional({ example: 15 })
   @IsOptional()
-  @IsString()
-  fornecedorNome?: string;
+  @IsNumber()
+  @Type(() => Number)
+  @Min(1)
+  fornecedorId?: number;
 
-  @ApiPropertyOptional({
-    example: '12345678000199',
-  })
+  @ApiPropertyOptional({ example: 25 })
   @IsOptional()
-  @IsString()
-  fornecedorDocumento?: string;
+  @IsNumber()
+  @Type(() => Number)
+  ordemServicoId?: number;
 
-  @ApiPropertyOptional({
-    example: 'Atualização da descrição da conta.',
-  })
+  @ApiPropertyOptional({ example: 'Alteração de descrição' })
   @IsOptional()
   @IsString()
   descricao?: string;
 
-  @ApiPropertyOptional({
-    example: 750,
-  })
+  @ApiPropertyOptional({ example: 3500 })
   @IsOptional()
   @IsNumber()
-  @Min(0.01)
   @Type(() => Number)
+  @Min(0.01)
   valorOriginal?: number;
 
-  @ApiPropertyOptional({
-    example: '2026-07-10',
-  })
+  @ApiPropertyOptional({ example: '2026-09-10' })
   @IsOptional()
   @IsDateString()
   dataVencimento?: string;
 
-  @ApiPropertyOptional({
-    example: '2026-06-25',
-  })
+  @ApiPropertyOptional({ example: '2026-07-15' })
   @IsOptional()
   @IsDateString()
   dataEmissao?: string;
 
-  @ApiPropertyOptional({
-    example: 1,
-    description: 'ID da conta financeira padrão para pagamento.',
-  })
+  @ApiPropertyOptional({ example: 1 })
   @IsOptional()
   @IsNumber()
   @Type(() => Number)
   contaFinanceiraId?: number;
-
-  @ApiPropertyOptional({
-    enum: StatusContaPagar,
-    example: StatusContaPagar.ABERTA,
-  })
-  @IsOptional()
-  @IsEnum(StatusContaPagar)
-  status?: StatusContaPagar;
 }
