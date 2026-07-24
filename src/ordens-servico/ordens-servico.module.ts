@@ -12,8 +12,12 @@ import { Proposta } from './entities/proposta.entity';
 import { OrdemServicoItem } from './entities/ordem-servico-item.entity';
 import { PropostaItem } from './entities/proposta-item.entity';
 import { User } from 'src/users/user.entity';
+import { OrderServiceResponsibleModule } from './order-service-responsible.module';
+import { OrderServiceResponsibleExpenseModule } from './order-service-responsible-expense.module';
 @Module({
   imports: [
+      OrderServiceResponsibleModule,
+      OrderServiceResponsibleExpenseModule,
     TypeOrmModule.forFeature([
       OrdemServico,
       OrdemServicoItem,
