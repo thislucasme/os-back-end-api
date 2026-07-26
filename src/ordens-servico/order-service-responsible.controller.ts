@@ -26,6 +26,7 @@ export class OrderServiceResponsibleController {
     @Param('orderServiceId', ParseIntPipe) orderServiceId: number,
     @Body() dto: CreateOrderServiceResponsibleDto,
   ) {
+    console.log("hehehheheh")
     return this.responsibleService.create(orderServiceId, dto);
   }
 

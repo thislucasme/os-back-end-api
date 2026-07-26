@@ -14,6 +14,10 @@ import { PropostaItem } from './entities/proposta-item.entity';
 import { User } from 'src/users/user.entity';
 import { OrderServiceResponsibleModule } from './order-service-responsible.module';
 import { OrderServiceResponsibleExpenseModule } from './order-service-responsible-expense.module';
+import { ItemOs } from './entities/item-os.entity';
+import { ItensOsController } from './itens-os.controller';
+import { ItensOsService } from './itens-os.service';
+import { ProdutoServico } from 'src/produtos-servicos/entities/produto-servico.entity';
 @Module({
   imports: [
       OrderServiceResponsibleModule,
@@ -26,6 +30,8 @@ import { OrderServiceResponsibleExpenseModule } from './order-service-responsibl
       Proposta,
       PropostaItem,
       User,
+      ItemOs, 
+      ProdutoServico
     ]),
 
     MulterModule.register({
@@ -41,8 +47,8 @@ import { OrderServiceResponsibleExpenseModule } from './order-service-responsibl
       }),
     }),
   ],
-  controllers: [OrdensServicoController],
-  providers: [OrdensServicoService],
+  controllers: [OrdensServicoController, ItensOsController],
+  providers: [OrdensServicoService, ItensOsService],
   exports: [OrdensServicoService],
 })
 export class OrdensServicoModule {}
