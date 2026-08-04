@@ -22,6 +22,8 @@ export class CreateContaReceberDto {
   @Min(1)
   clienteId!: number;
 
+  
+
 
 
   @ApiPropertyOptional({

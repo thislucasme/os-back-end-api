@@ -20,6 +20,7 @@ import { GerarPropostaDto } from './dto/gerar-proposta.dto';
 import { UpdateOrdemServicoDto } from './dto/update-ordem-servico.dto';
 import { UpdateStatusOrdemServicoDto } from './dto/update-status-ordem-servico.dto';
 import { OrdensServicoService } from './ordens-servico.service';
+import { ConcluirOrdemServicoDto } from './dto/concluir-os/concluir-ordem-servico.dto';
 
 @UseGuards(JwtAuthGuard)
 @Controller('ordens-servico')
@@ -143,5 +144,19 @@ export class OrdensServicoController {
             Number(id),
             req.user.id,
         );
+    }
+
+    @Post(':id/concluir')
+    concluir(
+        @Param('id') id: string,
+        @Body() dto: ConcluirOrdemServicoDto,
+        @Request() req,
+    ) {
+        return this.service.concluir(
+            Number(id),
+            dto,
+            req.user.id,
+        );
+
     }
 }

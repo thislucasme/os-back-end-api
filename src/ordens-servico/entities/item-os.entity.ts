@@ -1,4 +1,3 @@
-// src/modules/ordens-servico/entities/item-os.entity.ts
 import {
   Entity,
   Column,
@@ -7,14 +6,25 @@ import {
   JoinColumn,
   CreateDateColumn,
   UpdateDateColumn,
+  OneToMany,
 } from 'typeorm';
 import { OrdemServico } from './ordem-servico.entity';
 import { ProdutoServico } from 'src/produtos-servicos/entities/produto-servico.entity';
-import { User } from 'src/users/user.entity';
+import { ItemOsResponsavel } from './item-os-responsavel.entity';
+
+export enum ItemOsLiberacao {
+  APOS_RECEBIMENTO = 'APOS_RECEBIMENTO',
+  NA_CONCLUSAO_OS = 'NA_CONCLUSAO_OS',
+}
 
 export enum ItemOsTipo {
   PRODUTO = 'PRODUTO',
   SERVICO = 'SERVICO',
+}
+
+export enum ItemOsOrigem {
+  OS = 'OS',
+  PROPOSTA = 'PROPOSTA',
 }
 
 @Entity('itens_os')
@@ -43,17 +53,27 @@ export class ItemOs {
   nome!: string;
 
   @Column({ type: 'decimal', precision: 10, scale: 2, default: 0 })
-  valor!: number;
+  valor!: number; // unitário
 
-  @ManyToOne(() => User, { nullable: true })
-  @JoinColumn({ name: 'responsavel_id' })
-  responsavel!: User | null;
+  @Column({ type: 'int', default: 1 })
+  quantidade!: number;
 
-  @Column({ name: 'responsavel_id', nullable: true })
-  responsavelId!: number | null;
+  @Column({ type: 'enum', enum: ItemOsOrigem, default: ItemOsOrigem.OS })
+  origem!: ItemOsOrigem;
 
-  @Column({ type: 'decimal', precision: 5, scale: 2, default: 0 })
-  comissao!: number;
+  // Relação com os responsáveis (cada um com sua comissão)
+  @OneToMany(() => ItemOsResponsavel, (ir) => ir.item, { cascade: true, eager: true })
+  responsaveis!: ItemOsResponsavel[];
+
+  @Column({
+    type: 'enum',
+    enum: ItemOsLiberacao,
+    default: ItemOsLiberacao.NA_CONCLUSAO_OS,
+  })
+  liberacao!: ItemOsLiberacao;
+
+  @Column({ type: 'timestamp', nullable: true })
+  data_liberacao?: Date;
 
   @CreateDateColumn({ name: 'created_at' })
   createdAt!: Date;

@@ -97,4 +97,39 @@ export class OrderServiceResponsibleExpenseService {
     const expense = await this.findOne(orderServiceId, responsibleId, expenseId);
     await this.expenseRepo.remove(expense);
   }
+
+  // order-service-responsible-expense.service.ts
+
+async findAllByOrderService(
+  orderServiceId: number,
+  query: ListOrderServiceResponsibleExpenseDto,
+) {
+  const { page = 1, limit = 10, assignToOrderService } = query;
+  const skip = (page - 1) * limit;
+
+  const qb = this.expenseRepo
+    .createQueryBuilder('e')
+    .innerJoin('e.responsible', 'r')  
+    .where('r.orderServiceId = :orderServiceId', { orderServiceId });
+
+  if (assignToOrderService !== undefined) {
+    qb.andWhere('e.assignToOrderService = :assignToOrderService', {
+      assignToOrderService,
+    });
+  }
+
+  const [data, total] = await qb
+    .skip(skip)
+    .take(limit)
+    .orderBy('e.createdAt', 'DESC')
+    .getManyAndCount();
+
+  return {
+    data,
+    total,
+    page,
+    limit,
+    totalPages: Math.ceil(total / limit),
+  };
+}
 }

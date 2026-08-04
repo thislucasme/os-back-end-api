@@ -35,7 +35,7 @@ import { DespesasService } from './despesas.service';
 export class DespesasController {
   constructor(
     private readonly service: DespesasService,
-  ) {}
+  ) { }
 
   @Post()
   @ApiOperation({
@@ -60,6 +60,10 @@ export class DespesasController {
     @Req() req,
     @Body() dto: CreateDespesaDto,
   ) {
+    console.log(
+      req.user,
+      dto,
+    )
     return this.service.create(
       req.user,
       dto,

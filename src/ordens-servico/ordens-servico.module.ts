@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { forwardRef, Module } from '@nestjs/common';
 import { MulterModule } from '@nestjs/platform-express';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { diskStorage } from 'multer';
@@ -18,8 +18,11 @@ import { ItemOs } from './entities/item-os.entity';
 import { ItensOsController } from './itens-os.controller';
 import { ItensOsService } from './itens-os.service';
 import { ProdutoServico } from 'src/produtos-servicos/entities/produto-servico.entity';
+import { ItemOsResponsavel } from './entities/item-os-responsavel.entity';
+import { DespesasModule } from 'src/despesas/despesas.module';
 @Module({
   imports: [
+      forwardRef(() => DespesasModule),
       OrderServiceResponsibleModule,
       OrderServiceResponsibleExpenseModule,
     TypeOrmModule.forFeature([
@@ -31,7 +34,8 @@ import { ProdutoServico } from 'src/produtos-servicos/entities/produto-servico.e
       PropostaItem,
       User,
       ItemOs, 
-      ProdutoServico
+      ProdutoServico,
+      ItemOsResponsavel
     ]),
 
     MulterModule.register({

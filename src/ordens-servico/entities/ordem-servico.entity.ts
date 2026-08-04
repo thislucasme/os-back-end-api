@@ -135,4 +135,10 @@ export class OrdemServico {
 
   @UpdateDateColumn()
   updatedAt!: Date;
+
+  @Column({ nullable: true })
+  contaEntradaId?: number;
+
+  @Column({ nullable: true })
+  contaSaidaId?: number;
 }

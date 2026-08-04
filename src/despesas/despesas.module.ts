@@ -22,5 +22,6 @@ import { MovimentacoesModule } from 'src/movimentacoes/movimentacoes.module';
   providers: [
     DespesasService,
   ],
+  exports:[DespesasService]
 })
 export class DespesasModule {}

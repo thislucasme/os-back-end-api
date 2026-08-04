@@ -8,6 +8,9 @@ import { ContasReceberService } from './contas-receber.service';
 import { ContaFinanceira } from 'src/financeiro/contas-financeiras/entities/conta-financeira.entity';
 import { MovimentacoesModule } from 'src/movimentacoes/movimentacoes.module';
 import { ContaReceberParcela } from './entities/conta-receber-parcela.entity';
+import { OrdemServico } from 'src/ordens-servico/entities/ordem-servico.entity';
+import { Company } from 'src/companies/ company.entity';
+import { UsersModule } from 'src/users/users.module';
 
 @Module({
   imports: [
@@ -16,9 +19,12 @@ import { ContaReceberParcela } from './entities/conta-receber-parcela.entity';
       Recebimento,
       ContaFinanceira,
       User,
-      ContaReceberParcela
+      ContaReceberParcela,
+      OrdemServico,
+      Company
     ]),
-    MovimentacoesModule
+    MovimentacoesModule,
+    UsersModule
   ],
   controllers: [
     ContasReceberController,

@@ -1,8 +1,11 @@
 // src/ordens-servico/ordens-servico.service.ts
 
 import {
-    ConflictException,
+  BadRequestException,
+  ConflictException,
   ForbiddenException,
+  forwardRef,
+  Inject,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
@@ -27,6 +30,13 @@ import {
 import { CreateOrdemServicoDto } from './dto/create-ordem-servico.dto';
 import { UpdateOrdemServicoDto } from './dto/update-ordem-servico.dto';
 import { GerarPropostaDto } from './dto/gerar-proposta.dto';
+import { ConcluirOrdemServicoDto } from './dto/concluir-os/concluir-ordem-servico.dto';
+import { OrderServiceResponsible } from './entities/order-service-responsible.entity';
+import { OrderServiceResponsibleService } from './order-service-responsible.service';
+import { OrderServiceResponsibleExpenseService } from './order-service-responsible-expense.service';
+import { DespesasService } from 'src/despesas/despesas.service';
+import { getExpenseTypeLabel } from './constant/expense-types';
+import { CreateDespesaDto } from 'src/despesas/dto/create-despesa.dto';
 
 @Injectable()
 export class OrdensServicoService {
@@ -45,7 +55,12 @@ export class OrdensServicoService {
 
     @InjectRepository(User)
     private readonly usersRepo: Repository<User>,
-  ) {}
+
+    private readonly orderServiceResponsibleExpenseService: OrderServiceResponsibleExpenseService,
+
+    @Inject(forwardRef(() => DespesasService))
+    private readonly despesasService: DespesasService,
+  ) { }
 
   // =========================================================
   // HELPERS
@@ -74,22 +89,22 @@ export class OrdensServicoService {
 
     return user.companyId;
   }
-private async generateNumero(companyId: number): Promise<string> {
-  const last = await this.osRepo
-    .createQueryBuilder('os')
-    .where('os.companyId = :companyId', { companyId })
-    .andWhere('os.numero LIKE :prefix', { prefix: 'OS-%' })
-    .orderBy('os.id', 'DESC')
-    .getOne();
+  private async generateNumero(companyId: number): Promise<string> {
+    const last = await this.osRepo
+      .createQueryBuilder('os')
+      .where('os.companyId = :companyId', { companyId })
+      .andWhere('os.numero LIKE :prefix', { prefix: 'OS-%' })
+      .orderBy('os.id', 'DESC')
+      .getOne();
 
-  const lastNumber = last?.numero
-    ? Number(last.numero.replace('OS-', ''))
-    : 0;
+    const lastNumber = last?.numero
+      ? Number(last.numero.replace('OS-', ''))
+      : 0;
 
-  const nextNumber = lastNumber + 1;
+    const nextNumber = lastNumber + 1;
 
-  return `OS-${String(nextNumber).padStart(4, '0')}`;
-}
+    return `OS-${String(nextNumber).padStart(4, '0')}`;
+  }
 
   private async generateNumeroProposta() {
     const total =
@@ -192,38 +207,38 @@ private async generateNumero(companyId: number): Promise<string> {
   // CRIAR
   // =========================================================
 
-async create(dto: CreateOrdemServicoDto, userId: number) {
-  const companyId = await this.getCompanyId(userId);
+  async create(dto: CreateOrdemServicoDto, userId: number) {
+    const companyId = await this.getCompanyId(userId);
 
-  for (let attempt = 0; attempt < 5; attempt++) {
-    const numero = await this.generateNumero(companyId);
+    for (let attempt = 0; attempt < 5; attempt++) {
+      const numero = await this.generateNumero(companyId);
 
-    try {
-      const os = this.osRepo.create({
-        ...dto,
-        companyId,
-        numero,
-        valorTotal: dto['valorTotal'] ?? 0,
-      });
+      try {
+        const os = this.osRepo.create({
+          ...dto,
+          companyId,
+          numero,
+          valorTotal: dto['valorTotal'] ?? 0,
+        });
 
-      const saved = await this.osRepo.save(os);
+        const saved = await this.osRepo.save(os);
 
-      await this.addHistorico(
-        saved.id,
-        'OS criada',
-        'Ordem de serviço criada.',
-      );
+        await this.addHistorico(
+          saved.id,
+          'OS criada',
+          'Ordem de serviço criada.',
+        );
 
-      return this.findOne(saved.id, userId);
-    } catch (error: any) {
-      if (error?.code !== 'ER_DUP_ENTRY') {
-        throw error;
+        return this.findOne(saved.id, userId);
+      } catch (error: any) {
+        if (error?.code !== 'ER_DUP_ENTRY') {
+          throw error;
+        }
       }
     }
-  }
 
-  throw new ConflictException('Não foi possível gerar número único para a OS.');
-}
+    throw new ConflictException('Não foi possível gerar número único para a OS.');
+  }
 
   // =========================================================
   // EDITAR
@@ -240,11 +255,11 @@ async create(dto: CreateOrdemServicoDto, userId: number) {
         userId,
       );
 
-  Object.assign(os, {
-  ...dto,
-  companyId: os.companyId,
-  numero: os.numero,
-});
+    Object.assign(os, {
+      ...dto,
+      companyId: os.companyId,
+      numero: os.numero,
+    });
 
     const saved =
       await this.osRepo.save(os);
@@ -533,21 +548,110 @@ async create(dto: CreateOrdemServicoDto, userId: number) {
 
           <p>
             <strong>Defeito:</strong>
-            ${
-              os.defeitoRelatado ??
-              '-'
-            }
+            ${os.defeitoRelatado ??
+      '-'
+      }
           </p>
 
           <p>
             <strong>Diagnóstico:</strong>
-            ${
-              os.diagnosticoTecnico ??
-              '-'
-            }
+            ${os.diagnosticoTecnico ??
+      '-'
+      }
           </p>
         </body>
       </html>
     `;
   }
-}
+
+
+
+  // Adicione o método:
+  async concluir(
+    id: number,
+    dto: ConcluirOrdemServicoDto,
+    userId: number,
+  ) {
+    if(!dto.contaEntradaId){
+      throw new BadRequestException("Conta para entrada deve ser configurado")
+    }
+    // 1. Buscar a OS
+    const os = await this.findOne(id, userId);
+    const despesas = await this.orderServiceResponsibleExpenseService.findAllByOrderService(os.id, { page: 1, limit: 999 })
+    const despesasParaAtribuir = despesas.data.filter(d => d.assignToOrderService);
+
+    for (const despesa of despesasParaAtribuir) {
+      const tipoLabel = getExpenseTypeLabel(despesa.expenseTypeId);
+      const descricaoBase = despesa.description || `Despesa de ${tipoLabel}`;
+      const descricao = `OS #${os.id} - ${descricaoBase}`;
+
+      const createDto: CreateDespesaDto = {
+        contaFinanceiraId: dto.contaEntradaId,
+        descricao,
+        valor: Number(despesa.amount),
+        dataDespesa: despesa.createdAt.toISOString().split('T')[0],
+        observacao: `Gasto do responsável ID ${despesa.orderServiceResponsibleId}`,
+      };
+      console.log(createDto, "user id")
+
+      await this.despesasService.create({ id: userId }, createDto);
+    }
+      // this.despesasService.create()
+
+      // 2. Verificar se já está concluída (opcional)
+      // if (os.status === OrdemServicoStatus.ENTREGUE) {
+      //   throw new ConflictException('Esta OS já foi concluída.');
+      // }
+
+      // 3. Atualizar status para ENTREGUE (ou CONCLUIDA)
+      os.status = OrdemServicoStatus.ENTREGUE;
+
+      // 4. Salvar os IDs das contas e a observação (se for guardar na OS)
+      if (dto.contaEntradaId !== undefined) {
+        os.contaEntradaId = dto.contaEntradaId;
+      }
+      if (dto.contaSaidaId !== undefined) {
+        os.contaSaidaId = dto.contaSaidaId;
+      }
+      // Se você quiser guardar a observação em algum campo, como 'observacoesInternas' ou 'mensagemFinal':
+      if (dto.observacao) {
+        os.observacoesInternas = dto.observacao; // ou 'mensagemFinal'
+      }
+
+      // 5. Salvar a OS
+      const savedOs = await this.osRepo.save(os);
+
+      // 6. Registrar histórico
+      await this.addHistorico(
+        savedOs.id,
+        'OS concluída',
+        `OS finalizada com sucesso. Conta entrada: ${dto.contaEntradaId || 'N/A'}, Conta saída: ${dto.contaSaidaId || 'N/A'}. Obs: ${dto.observacao || ''}`,
+      );
+
+      // 7. SIMULAR criação de venda e contas (você deve substituir pela lógica real)
+      // Aqui você chamaria os serviços de Venda e Contas a Pagar/Receber
+      // Gerar venda a partir dos itens da OS
+      const vendaId = Math.floor(Math.random() * 1000) + 100; // mock
+
+      // Gerar conta a receber (entrada)
+      const contaRecebimentoId = Math.floor(Math.random() * 1000) + 200; // mock
+
+      // Gerar contas a pagar (comissões, custos, etc) - pode ser várias
+      // Supondo que você tenha uma lista de pagamentos a gerar
+      const pagamentosIds = [
+        Math.floor(Math.random() * 1000) + 300,
+        Math.floor(Math.random() * 1000) + 400,
+      ]; // mock
+
+      // 8. Retornar conforme esperado
+      return {
+        message: 'OS concluída com sucesso',
+        ordemServicoId: savedOs.id,
+        vendaId,
+        contasGeradas: {
+          recebimento: contaRecebimentoId,
+          pagamentos: pagamentosIds,
+        },
+      };
+    }
+  }

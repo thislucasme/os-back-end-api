@@ -67,4 +67,12 @@ export class OrderServiceResponsibleExpenseController {
   ) {
     return this.expenseService.remove(orderServiceId, responsibleId, expenseId);
   }
+
+    @Get()
+  findAllByOrderService(
+    @Param('orderServiceId', ParseIntPipe) orderServiceId: number,
+    @Query() query: ListOrderServiceResponsibleExpenseDto,
+  ) {
+    return this.expenseService.findAllByOrderService(orderServiceId, query);
+  }
 }

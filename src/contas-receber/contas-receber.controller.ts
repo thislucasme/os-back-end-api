@@ -179,48 +179,48 @@ export class ContasReceberController {
   }
 
   @Post('parcelas/:id/receber')
-@ApiOperation({
-  summary: 'Receber parcela da conta',
-  description:
-    'Registra o pagamento de uma parcela específica da conta a receber.',
-})
-@ApiParam({
-  name:'id',
-  example:1,
-  description:
-    'ID da parcela da conta a receber.',
-})
-@ApiBody({
-  type:ReceberParcelaDto,
-})
-@ApiResponse({
-  status:201,
-  description:
-    'Parcela recebida com sucesso.',
-})
-@ApiResponse({
-  status:400,
-  description:
-    'Parcela já paga ou dados inválidos.',
-})
-@ApiResponse({
-  status:404,
-  description:
-    'Parcela não encontrada.',
-})
-receberParcela(
-  @Request() req,
-  @Param('id') id:string,
-  @Body() dto:ReceberParcelaDto,
-){
+  @ApiOperation({
+    summary: 'Receber parcela da conta',
+    description:
+      'Registra o pagamento de uma parcela específica da conta a receber.',
+  })
+  @ApiParam({
+    name: 'id',
+    example: 1,
+    description:
+      'ID da parcela da conta a receber.',
+  })
+  @ApiBody({
+    type: ReceberParcelaDto,
+  })
+  @ApiResponse({
+    status: 201,
+    description:
+      'Parcela recebida com sucesso.',
+  })
+  @ApiResponse({
+    status: 400,
+    description:
+      'Parcela já paga ou dados inválidos.',
+  })
+  @ApiResponse({
+    status: 404,
+    description:
+      'Parcela não encontrada.',
+  })
+  receberParcela(
+    @Request() req,
+    @Param('id') id: string,
+    @Body() dto: ReceberParcelaDto,
+  ) {
 
-  return this.service.receberParcela(
-    req.user,
-    Number(id),
-    dto,
-  );
+    return this.service.receberParcela(
+      req.user,
+      Number(id),
+      dto,
+    );
 
-}
+  }
 
   @Delete(':id')
   @ApiOperation({
@@ -254,4 +254,24 @@ receberParcela(
       Number(id),
     );
   }
+
+@Get('ordens-servico/:id')
+@ApiOperation({
+  summary: 'Buscar contas a receber por ordem de serviço',
+  description: 'Retorna todas as contas a receber vinculadas a uma OS específica.',
+})
+@ApiParam({
+  name: 'id',
+  description: 'ID da ordem de serviço',
+  example: 5,
+})
+@ApiResponse({
+  status: 200,
+  description: 'Lista de contas a receber da OS.',
+  type: [ContaReceber],
+})
+async getContasByOrdemServico(@Req() req, @Param('id') id: string) {
+  const companyId = await this.service.getCompanyId(req.user);
+  return this.service.findByOrdemServico(Number(id), companyId);
+}
 }

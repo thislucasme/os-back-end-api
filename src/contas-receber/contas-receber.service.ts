@@ -20,6 +20,9 @@ import {
 } from './entities/conta-receber.entity';
 import { Recebimento } from './entities/recebimento.entity';
 import { OrigemMovimentacaoFinanceira } from 'src/movimentacoes/entities/movimentacao-financeira.entity';
+import { OrdemServico } from 'src/ordens-servico/entities/ordem-servico.entity';
+import { Company } from 'src/companies/ company.entity';
+import { UsersService } from 'src/users/users.service';
 
 @Injectable()
 export class ContasReceberService {
@@ -37,12 +40,22 @@ export class ContasReceberService {
     private readonly parcelasRepository:
       Repository<ContaReceberParcela>,
 
+    @InjectRepository(Company)
+    private readonly companyRepository:
+      Repository<Company>,
+
+    @InjectRepository(OrdemServico)
+    private readonly ordemServicoRepository: Repository<OrdemServico>,
+
+    private readonly userService: UsersService,
+
     private readonly movimentacoesService: MovimentacoesService,
   ) { }
-  private async getCompanyIdFromRequestUser(
+  public async getCompanyIdFromRequestUser(
     requestUser: any,
   ): Promise<number> {
-    const userId = requestUser?.id;
+    const userId = Number(requestUser?.id);
+    console.log("id dentro da funcao", userId)
 
     if (!userId) {
       throw new ForbiddenException(
@@ -63,6 +76,27 @@ export class ContasReceberService {
       throw new ForbiddenException(
         'Usuário sem empresa vinculada.',
       );
+    }
+
+    return user.companyId;
+  }
+
+  public async getCompanyId(requestUser: any): Promise<number> {
+    const userId = Number(requestUser?.id);
+
+    // Validação explícita
+    if (isNaN(userId) || userId <= 0) {
+      throw new ForbiddenException('ID de usuário inválido ou ausente.');
+    }
+
+    // Busca apenas o companyId
+    const user = await this.usersRepository.findOne({
+      where: { id: userId },
+      select: { companyId: true }, // funciona com findOne
+    });
+
+    if (!user?.companyId) {
+      throw new ForbiddenException('Usuário sem empresa vinculada.');
     }
 
     return user.companyId;
@@ -493,43 +527,292 @@ export class ContasReceberService {
 
   }
 
-async receberParcela(
-  requestUser: any,
-  parcelaId: number,
-  dto: ReceberParcelaDto,
-) {
+  async receberParcela(
+    requestUser: any,
+    parcelaId: number,
+    dto: ReceberParcelaDto,
+  ) {
 
-  const companyId =
-    await this.getCompanyIdFromRequestUser(
-      requestUser,
-    );
-
-
-  return this.repository.manager.transaction(
-    async manager => {
+    const companyId =
+      await this.getCompanyIdFromRequestUser(
+        requestUser,
+      );
 
 
-      const parcelasRepository =
-        manager.getRepository(ContaReceberParcela);
+    return this.repository.manager.transaction(
+      async manager => {
 
 
-      const recebimentosRepository =
-        manager.getRepository(Recebimento);
+        const parcelasRepository =
+          manager.getRepository(ContaReceberParcela);
 
 
-      const contasFinanceirasRepository =
-        manager.getRepository(ContaFinanceira);
+        const recebimentosRepository =
+          manager.getRepository(Recebimento);
+
+
+        const contasFinanceirasRepository =
+          manager.getRepository(ContaFinanceira);
 
 
 
-      const parcela =
-        await parcelasRepository.findOne({
+        const parcela =
+          await parcelasRepository.findOne({
+
+            where: {
+              id: parcelaId,
+            },
+
+            relations: {
+              contaReceber: true,
+            },
+
+          });
+
+
+
+        if (!parcela) {
+          throw new NotFoundException(
+            'Parcela não encontrada.',
+          );
+        }
+
+
+
+        if (
+          parcela.contaReceber.companyId !== companyId
+        ) {
+
+          throw new ForbiddenException(
+            'Sem permissão.',
+          );
+
+        }
+
+
+
+        if (parcela.paga) {
+
+          throw new BadRequestException(
+            'Esta parcela já foi recebida.',
+          );
+
+        }
+
+
+
+
+        const valor =
+          Number(dto.valor);
+
+
+
+        if (valor <= 0) {
+
+          throw new BadRequestException(
+            'Valor inválido.',
+          );
+
+        }
+
+
+
+
+        const contaFinanceiraId =
+          dto.contaFinanceiraId ??
+          parcela.contaReceber.contaFinanceiraId;
+
+
+
+
+        if (!contaFinanceiraId) {
+
+          throw new BadRequestException(
+            'Informe a conta financeira.',
+          );
+
+        }
+
+
+
+
+        const contaFinanceira =
+          await contasFinanceirasRepository.findOne({
+
+            where: {
+              id: contaFinanceiraId,
+              companyId,
+            },
+
+          });
+
+
+
+
+        if (!contaFinanceira) {
+
+          throw new BadRequestException(
+            'Conta financeira não encontrada.',
+          );
+
+        }
+
+
+
+
+        // Atualiza saldo da conta financeira
+
+        contaFinanceira.saldoAtual =
+          this.roundMoney(
+            Number(contaFinanceira.saldoAtual || 0)
+            +
+            valor,
+          );
+
+
+
+        await contasFinanceirasRepository.save(
+          contaFinanceira,
+        );
+
+
+
+
+
+        // Cria recebimento
+
+        const recebimento =
+          recebimentosRepository.create({
+
+            companyId,
+
+            parcelaId:
+              parcela.id,
+
+            contaFinanceiraId,
+
+            valor,
+
+            dataRecebimento:
+              dto.dataRecebimento ??
+              this.today(),
+
+            formaPagamento:
+              dto.formaPagamento ?? null,
+
+            observacao:
+              dto.observacao ?? null,
+
+          });
+
+
+
+        const recebimentoSalvo =
+          await recebimentosRepository.save(
+            recebimento,
+          );
+
+
+
+
+
+
+        // Marca parcela como paga
+
+        parcela.paga = true;
+
+
+
+        await parcelasRepository.save(
+          parcela,
+        );
+
+
+
+
+
+
+
+        // Atualiza conta principal
+
+        const conta =
+          parcela.contaReceber;
+
+
+
+        conta.valorRecebido =
+          this.roundMoney(
+            Number(conta.valorRecebido || 0)
+            +
+            valor,
+          );
+
+
+
+        conta.status =
+          this.definirStatusPeloRecebimento(
+            Number(conta.valorOriginal),
+            Number(conta.valorRecebido),
+          );
+
+
+
+        await manager.save(
+          conta,
+        );
+
+
+
+
+
+
+
+        // REGISTRA MOVIMENTAÇÃO FINANCEIRA
+
+        await this.movimentacoesService.registrarEntrada(
+          {
+
+            companyId,
+
+            contaFinanceiraId,
+
+            valor,
+
+            origem:
+              OrigemMovimentacaoFinanceira.CONTA_RECEBER,
+
+
+            referenciaId:
+              recebimentoSalvo.id,
+
+
+            descricao:
+              `Recebimento da parcela #${parcela.id} da conta a receber #${conta.id}`,
+
+
+            dataMovimentacao:
+              dto.dataRecebimento ??
+              this.today(),
+
+          },
+
+          manager,
+        );
+
+
+
+
+
+
+
+        return parcelasRepository.findOne({
 
           where: {
-            id: parcelaId,
+            id: parcela.id,
           },
 
           relations: {
+            recebimentos: true,
             contaReceber: true,
           },
 
@@ -537,259 +820,10 @@ async receberParcela(
 
 
 
-      if (!parcela) {
-        throw new NotFoundException(
-          'Parcela não encontrada.',
-        );
-      }
+      },
+    );
 
-
-
-      if (
-        parcela.contaReceber.companyId !== companyId
-      ) {
-
-        throw new ForbiddenException(
-          'Sem permissão.',
-        );
-
-      }
-
-
-
-      if (parcela.paga) {
-
-        throw new BadRequestException(
-          'Esta parcela já foi recebida.',
-        );
-
-      }
-
-
-
-
-      const valor =
-        Number(dto.valor);
-
-
-
-      if (valor <= 0) {
-
-        throw new BadRequestException(
-          'Valor inválido.',
-        );
-
-      }
-
-
-
-
-      const contaFinanceiraId =
-        dto.contaFinanceiraId ??
-        parcela.contaReceber.contaFinanceiraId;
-
-
-
-
-      if (!contaFinanceiraId) {
-
-        throw new BadRequestException(
-          'Informe a conta financeira.',
-        );
-
-      }
-
-
-
-
-      const contaFinanceira =
-        await contasFinanceirasRepository.findOne({
-
-          where: {
-            id: contaFinanceiraId,
-            companyId,
-          },
-
-        });
-
-
-
-
-      if (!contaFinanceira) {
-
-        throw new BadRequestException(
-          'Conta financeira não encontrada.',
-        );
-
-      }
-
-
-
-
-      // Atualiza saldo da conta financeira
-
-      contaFinanceira.saldoAtual =
-        this.roundMoney(
-          Number(contaFinanceira.saldoAtual || 0)
-          +
-          valor,
-        );
-
-
-
-      await contasFinanceirasRepository.save(
-        contaFinanceira,
-      );
-
-
-
-
-
-      // Cria recebimento
-
-      const recebimento =
-        recebimentosRepository.create({
-
-          companyId,
-
-          parcelaId:
-            parcela.id,
-
-          contaFinanceiraId,
-
-          valor,
-
-          dataRecebimento:
-            dto.dataRecebimento ??
-            this.today(),
-
-          formaPagamento:
-            dto.formaPagamento ?? null,
-
-          observacao:
-            dto.observacao ?? null,
-
-        });
-
-
-
-      const recebimentoSalvo =
-        await recebimentosRepository.save(
-          recebimento,
-        );
-
-
-
-
-
-
-      // Marca parcela como paga
-
-      parcela.paga = true;
-
-
-
-      await parcelasRepository.save(
-        parcela,
-      );
-
-
-
-
-
-
-
-      // Atualiza conta principal
-
-      const conta =
-        parcela.contaReceber;
-
-
-
-      conta.valorRecebido =
-        this.roundMoney(
-          Number(conta.valorRecebido || 0)
-          +
-          valor,
-        );
-
-
-
-      conta.status =
-        this.definirStatusPeloRecebimento(
-          Number(conta.valorOriginal),
-          Number(conta.valorRecebido),
-        );
-
-
-
-      await manager.save(
-        conta,
-      );
-
-
-
-
-
-
-
-      // REGISTRA MOVIMENTAÇÃO FINANCEIRA
-
-      await this.movimentacoesService.registrarEntrada(
-        {
-
-          companyId,
-
-          contaFinanceiraId,
-
-          valor,
-
-          origem:
-            OrigemMovimentacaoFinanceira.CONTA_RECEBER,
-
-
-          referenciaId:
-            recebimentoSalvo.id,
-
-
-          descricao:
-            `Recebimento da parcela #${parcela.id} da conta a receber #${conta.id}`,
-
-
-          dataMovimentacao:
-            dto.dataRecebimento ??
-            this.today(),
-
-        },
-
-        manager,
-      );
-
-
-
-
-
-
-
-      return parcelasRepository.findOne({
-
-        where:{
-          id: parcela.id,
-        },
-
-        relations:{
-          recebimentos:true,
-          contaReceber:true,
-        },
-
-      });
-
-
-
-    },
-  );
-
-}
+  }
 
   async remove(
     requestUser: any,
@@ -806,4 +840,25 @@ async receberParcela(
       deleted: true,
     };
   }
+  async findByOrdemServico(
+    ordemServicoId: number,
+    companyId: number,
+  ): Promise<ContaReceber[]> {
+    return this.repository.find({
+      where: {
+        ordemServicoId,
+        companyId,
+      },
+      relations: {
+        cliente: true,
+        parcelas: true,
+        contaFinanceira: true,
+      },
+      order: {
+        dataVencimento: 'ASC',
+      },
+    });
+  }
+
+
 }

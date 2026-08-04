@@ -1,0 +1,150 @@
+# Details
+
+Date : 2026-07-28 22:24:31
+
+Directory /home/tavarish/Documentos/work/nestjs-auth-starter/auth-api
+
+Total : 135 files,  20844 codes, 123 comments, 1968 blanks, all 22935 lines
+
+[Summary](results.md) / Details / [Diff Summary](diff.md) / [Diff Details](diff-details.md)
+
+## Files
+| filename | language | code | comment | blank | total |
+| :--- | :--- | ---: | ---: | ---: | ---: |
+| [README.md](/README.md) | Markdown | 68 | 2 | 29 | 99 |
+| [docker-compose.yml](/docker-compose.yml) | YAML | 16 | 0 | 6 | 22 |
+| [eslint.config.mjs](/eslint.config.mjs) | JavaScript | 33 | 1 | 2 | 36 |
+| [nest-cli.json](/nest-cli.json) | JSON | 8 | 0 | 1 | 9 |
+| [package-lock.json](/package-lock.json) | JSON | 10,655 | 0 | 1 | 10,656 |
+| [package.json](/package.json) | JSON | 92 | 0 | 1 | 93 |
+| [src/app.controller.spec.ts](/src/app.controller.spec.ts) | TypeScript | 18 | 0 | 5 | 23 |
+| [src/app.controller.ts](/src/app.controller.ts) | TypeScript | 10 | 0 | 3 | 13 |
+| [src/app.module.ts](/src/app.module.ts) | TypeScript | 56 | 0 | 5 | 61 |
+| [src/app.service.ts](/src/app.service.ts) | TypeScript | 7 | 0 | 2 | 9 |
+| [src/auth/auth.controller.ts](/src/auth/auth.controller.ts) | TypeScript | 128 | 0 | 8 | 136 |
+| [src/auth/auth.module.ts](/src/auth/auth.module.ts) | TypeScript | 24 | 0 | 3 | 27 |
+| [src/auth/auth.service.ts](/src/auth/auth.service.ts) | TypeScript | 25 | 0 | 7 | 32 |
+| [src/auth/jwt-auth.guard.ts](/src/auth/jwt-auth.guard.ts) | TypeScript | 8 | 0 | 2 | 10 |
+| [src/auth/jwt.decorator.ts](/src/auth/jwt.decorator.ts) | TypeScript | 3 | 0 | 3 | 6 |
+| [src/auth/jwt.strategy.ts](/src/auth/jwt.strategy.ts) | TypeScript | 24 | 0 | 5 | 29 |
+| [src/clientes-fornecedores/clientes-fornecedores.controller.ts](/src/clientes-fornecedores/clientes-fornecedores.controller.ts) | TypeScript | 127 | 0 | 7 | 134 |
+| [src/clientes-fornecedores/clientes-fornecedores.module.ts](/src/clientes-fornecedores/clientes-fornecedores.module.ts) | TypeScript | 15 | 3 | 3 | 21 |
+| [src/clientes-fornecedores/clientes-fornecedores.service.ts](/src/clientes-fornecedores/clientes-fornecedores.service.ts) | TypeScript | 138 | 0 | 31 | 169 |
+| [src/clientes-fornecedores/dto/create-cliente-fornecedor.dto.ts](/src/clientes-fornecedores/dto/create-cliente-fornecedor.dto.ts) | TypeScript | 76 | 0 | 9 | 85 |
+| [src/clientes-fornecedores/dto/update-cliente-fornecedor.dto.ts](/src/clientes-fornecedores/dto/update-cliente-fornecedor.dto.ts) | TypeScript | 5 | 0 | 1 | 6 |
+| [src/clientes-fornecedores/entities/cliente-fornecedor.entity.ts](/src/clientes-fornecedores/entities/cliente-fornecedor.entity.ts) | TypeScript | 58 | 0 | 17 | 75 |
+| [src/companies/ company.entity.ts](/src/companies/%20company.entity.ts) | TypeScript | 48 | 0 | 17 | 65 |
+| [src/companies/companies.controller.ts](/src/companies/companies.controller.ts) | TypeScript | 65 | 0 | 8 | 73 |
+| [src/companies/companies.module.ts](/src/companies/companies.module.ts) | TypeScript | 14 | 0 | 2 | 16 |
+| [src/companies/companies.service.ts](/src/companies/companies.service.ts) | TypeScript | 62 | 0 | 20 | 82 |
+| [src/companies/dto/create-company.dto.ts](/src/companies/dto/create-company.dto.ts) | TypeScript | 16 | 0 | 0 | 16 |
+| [src/companies/dto/update-company.dto.ts](/src/companies/dto/update-company.dto.ts) | TypeScript | 3 | 0 | 1 | 4 |
+| [src/contas-pagar/contas-pagar.controller.ts](/src/contas-pagar/contas-pagar.controller.ts) | TypeScript | 220 | 7 | 7 | 234 |
+| [src/contas-pagar/contas-pagar.module.ts](/src/contas-pagar/contas-pagar.module.ts) | TypeScript | 29 | 0 | 1 | 30 |
+| [src/contas-pagar/contas-pagar.service.ts](/src/contas-pagar/contas-pagar.service.ts) | TypeScript | 350 | 13 | 74 | 437 |
+| [src/contas-pagar/dto/create-conta-pagar.dto.ts](/src/contas-pagar/dto/create-conta-pagar.dto.ts) | TypeScript | 71 | 1 | 8 | 80 |
+| [src/contas-pagar/dto/pagar-conta.dto.ts](/src/contas-pagar/dto/pagar-conta.dto.ts) | TypeScript | 47 | 0 | 5 | 52 |
+| [src/contas-pagar/dto/pagar-parcela.dto.ts](/src/contas-pagar/dto/pagar-parcela.dto.ts) | TypeScript | 46 | 1 | 5 | 52 |
+| [src/contas-pagar/dto/update-conta-pagar.dto.ts](/src/contas-pagar/dto/update-conta-pagar.dto.ts) | TypeScript | 45 | 1 | 7 | 53 |
+| [src/contas-pagar/entities/conta-pagar-parcela.entity.ts](/src/contas-pagar/entities/conta-pagar-parcela.entity.ts) | TypeScript | 55 | 1 | 10 | 66 |
+| [src/contas-pagar/entities/conta-pagar.entity.ts](/src/contas-pagar/entities/conta-pagar.entity.ts) | TypeScript | 110 | 10 | 19 | 139 |
+| [src/contas-pagar/entities/pagamento.entity.ts](/src/contas-pagar/entities/pagamento.entity.ts) | TypeScript | 59 | 1 | 12 | 72 |
+| [src/contas-receber/contas-receber.controller.ts](/src/contas-receber/contas-receber.controller.ts) | TypeScript | 247 | 0 | 10 | 257 |
+| [src/contas-receber/contas-receber.module.ts](/src/contas-receber/contas-receber.module.ts) | TypeScript | 29 | 0 | 1 | 30 |
+| [src/contas-receber/contas-receber.service.ts](/src/contas-receber/contas-receber.service.ts) | TypeScript | 493 | 5 | 311 | 809 |
+| [src/contas-receber/dto/create-conta-receber.dto.ts](/src/contas-receber/dto/create-conta-receber.dto.ts) | TypeScript | 80 | 0 | 27 | 107 |
+| [src/contas-receber/dto/receber-parcela.dto.ts](/src/contas-receber/dto/receber-parcela.dto.ts) | TypeScript | 50 | 0 | 25 | 75 |
+| [src/contas-receber/dto/update-conta-receber.dto.ts](/src/contas-receber/dto/update-conta-receber.dto.ts) | TypeScript | 64 | 0 | 30 | 94 |
+| [src/contas-receber/entities/conta-receber-parcela.entity.ts](/src/contas-receber/entities/conta-receber-parcela.entity.ts) | TypeScript | 56 | 0 | 38 | 94 |
+| [src/contas-receber/entities/conta-receber.entity.ts](/src/contas-receber/entities/conta-receber.entity.ts) | TypeScript | 138 | 12 | 78 | 228 |
+| [src/contas-receber/entities/recebimento.entity.ts](/src/contas-receber/entities/recebimento.entity.ts) | TypeScript | 87 | 3 | 61 | 151 |
+| [src/despesas/despesas.controller.ts](/src/despesas/despesas.controller.ts) | TypeScript | 230 | 0 | 7 | 237 |
+| [src/despesas/despesas.module.ts](/src/despesas/despesas.module.ts) | TypeScript | 25 | 0 | 1 | 26 |
+| [src/despesas/despesas.service.ts](/src/despesas/despesas.service.ts) | TypeScript | 546 | 0 | 85 | 631 |
+| [src/despesas/dto/create-despesa.dto.ts](/src/despesas/dto/create-despesa.dto.ts) | TypeScript | 58 | 0 | 7 | 65 |
+| [src/despesas/dto/update-despesa.dto.ts](/src/despesas/dto/update-despesa.dto.ts) | TypeScript | 57 | 0 | 7 | 64 |
+| [src/despesas/entities/despesa.entity.ts](/src/despesas/entities/despesa.entity.ts) | TypeScript | 137 | 0 | 16 | 153 |
+| [src/financeiro/contas-financeiras/contas-financeiras.controller.ts](/src/financeiro/contas-financeiras/contas-financeiras.controller.ts) | TypeScript | 83 | 0 | 6 | 89 |
+| [src/financeiro/contas-financeiras/contas-financeiras.module.ts](/src/financeiro/contas-financeiras/contas-financeiras.module.ts) | TypeScript | 24 | 0 | 1 | 25 |
+| [src/financeiro/contas-financeiras/contas-financeiras.service.ts](/src/financeiro/contas-financeiras/contas-financeiras.service.ts) | TypeScript | 183 | 1 | 29 | 213 |
+| [src/financeiro/contas-financeiras/dto/create-conta-financeira.dto.ts](/src/financeiro/contas-financeiras/dto/create-conta-financeira.dto.ts) | TypeScript | 59 | 0 | 7 | 66 |
+| [src/financeiro/contas-financeiras/dto/find-conta-financeira.dto.ts](/src/financeiro/contas-financeiras/dto/find-conta-financeira.dto.ts) | TypeScript | 37 | 1 | 6 | 44 |
+| [src/financeiro/contas-financeiras/dto/update-conta-financeira.dto.ts](/src/financeiro/contas-financeiras/dto/update-conta-financeira.dto.ts) | TypeScript | 5 | 0 | 1 | 6 |
+| [src/financeiro/contas-financeiras/entities/conta-financeira.entity.ts](/src/financeiro/contas-financeiras/entities/conta-financeira.entity.ts) | TypeScript | 130 | 0 | 16 | 146 |
+| [src/financeiro/contas-financeiras/enums/tipo-conta-financeira.enum.ts](/src/financeiro/contas-financeiras/enums/tipo-conta-financeira.enum.ts) | TypeScript | 6 | 0 | 0 | 6 |
+| [src/funcionarios/dto/create-funcionario.dto.ts](/src/funcionarios/dto/create-funcionario.dto.ts) | TypeScript | 136 | 0 | 19 | 155 |
+| [src/funcionarios/dto/update-funcionario.dto.ts](/src/funcionarios/dto/update-funcionario.dto.ts) | TypeScript | 3 | 0 | 1 | 4 |
+| [src/funcionarios/funcionarios.controller.ts](/src/funcionarios/funcionarios.controller.ts) | TypeScript | 57 | 0 | 6 | 63 |
+| [src/funcionarios/funcionarios.module.ts](/src/funcionarios/funcionarios.module.ts) | TypeScript | 12 | 0 | 1 | 13 |
+| [src/funcionarios/funcionarios.service.ts](/src/funcionarios/funcionarios.service.ts) | TypeScript | 187 | 0 | 42 | 229 |
+| [src/get/get.controller.ts](/src/get/get.controller.ts) | TypeScript | 15 | 0 | 3 | 18 |
+| [src/get/get.module.ts](/src/get/get.module.ts) | TypeScript | 6 | 0 | 2 | 8 |
+| [src/main.ts](/src/main.ts) | TypeScript | 27 | 0 | 7 | 34 |
+| [src/movimentacoes/entities/movimentacao-financeira.entity.ts](/src/movimentacoes/entities/movimentacao-financeira.entity.ts) | TypeScript | 130 | 0 | 15 | 145 |
+| [src/movimentacoes/movimentacoes.controller.ts](/src/movimentacoes/movimentacoes.controller.ts) | TypeScript | 130 | 0 | 3 | 133 |
+| [src/movimentacoes/movimentacoes.module.ts](/src/movimentacoes/movimentacoes.module.ts) | TypeScript | 26 | 0 | 1 | 27 |
+| [src/movimentacoes/movimentacoes.service.ts](/src/movimentacoes/movimentacoes.service.ts) | TypeScript | 335 | 0 | 48 | 383 |
+| [src/ordens-servico/dto/concluir-os/concluir-ordem-servico.dto.ts](/src/ordens-servico/dto/concluir-os/concluir-ordem-servico.dto.ts) | TypeScript | 12 | 1 | 3 | 16 |
+| [src/ordens-servico/dto/create-ordem-servico.dto.ts](/src/ordens-servico/dto/create-ordem-servico.dto.ts) | TypeScript | 28 | 1 | 7 | 36 |
+| [src/ordens-servico/dto/create-proposta.dto.ts](/src/ordens-servico/dto/create-proposta.dto.ts) | TypeScript | 23 | 1 | 7 | 31 |
+| [src/ordens-servico/dto/expense/create-order-service-responsible-expense.dto.ts](/src/ordens-servico/dto/expense/create-order-service-responsible-expense.dto.ts) | TypeScript | 14 | 0 | 4 | 18 |
+| [src/ordens-servico/dto/expense/update-order-service-responsible-expense.dto.ts](/src/ordens-servico/dto/expense/update-order-service-responsible-expense.dto.ts) | TypeScript | 17 | 0 | 4 | 21 |
+| [src/ordens-servico/dto/gerar-proposta.dto.ts](/src/ordens-servico/dto/gerar-proposta.dto.ts) | TypeScript | 12 | 0 | 3 | 15 |
+| [src/ordens-servico/dto/itens-os/create-item-os.dto.ts](/src/ordens-servico/dto/itens-os/create-item-os.dto.ts) | TypeScript | 33 | 0 | 10 | 43 |
+| [src/ordens-servico/dto/itens-os/item-os-response.dto.ts](/src/ordens-servico/dto/itens-os/item-os-response.dto.ts) | TypeScript | 43 | 1 | 17 | 61 |
+| [src/ordens-servico/dto/itens-os/update-item-os.dto.ts](/src/ordens-servico/dto/itens-os/update-item-os.dto.ts) | TypeScript | 3 | 0 | 1 | 4 |
+| [src/ordens-servico/dto/responsible/create-order-service-responsible.dto.ts](/src/ordens-servico/dto/responsible/create-order-service-responsible.dto.ts) | TypeScript | 17 | 0 | 5 | 22 |
+| [src/ordens-servico/dto/responsible/list-order-service-responsible-expense.dto.ts](/src/ordens-servico/dto/responsible/list-order-service-responsible-expense.dto.ts) | TypeScript | 17 | 0 | 3 | 20 |
+| [src/ordens-servico/dto/responsible/list-order-service-responsible.dto.ts](/src/ordens-servico/dto/responsible/list-order-service-responsible.dto.ts) | TypeScript | 17 | 0 | 3 | 20 |
+| [src/ordens-servico/dto/responsible/update-order-service-responsible.dto.ts](/src/ordens-servico/dto/responsible/update-order-service-responsible.dto.ts) | TypeScript | 18 | 0 | 4 | 22 |
+| [src/ordens-servico/dto/update-ordem-servico.dto.ts](/src/ordens-servico/dto/update-ordem-servico.dto.ts) | TypeScript | 3 | 1 | 1 | 5 |
+| [src/ordens-servico/dto/update-proposta.dto.ts](/src/ordens-servico/dto/update-proposta.dto.ts) | TypeScript | 3 | 1 | 1 | 5 |
+| [src/ordens-servico/dto/update-status-ordem-servico.dto.ts](/src/ordens-servico/dto/update-status-ordem-servico.dto.ts) | TypeScript | 4 | 1 | 1 | 6 |
+| [src/ordens-servico/entities/item-os-responsavel.entity.ts](/src/ordens-servico/entities/item-os-responsavel.entity.ts) | TypeScript | 21 | 0 | 6 | 27 |
+| [src/ordens-servico/entities/item-os.entity.ts](/src/ordens-servico/entities/item-os.entity.ts) | TypeScript | 52 | 1 | 15 | 68 |
+| [src/ordens-servico/entities/ordem-servico-anexo.entity.ts](/src/ordens-servico/entities/ordem-servico-anexo.entity.ts) | TypeScript | 40 | 1 | 10 | 51 |
+| [src/ordens-servico/entities/ordem-servico-historico.entity.ts](/src/ordens-servico/entities/ordem-servico-historico.entity.ts) | TypeScript | 31 | 0 | 8 | 39 |
+| [src/ordens-servico/entities/ordem-servico-item.entity.ts](/src/ordens-servico/entities/ordem-servico-item.entity.ts) | TypeScript | 32 | 1 | 9 | 42 |
+| [src/ordens-servico/entities/ordem-servico.entity.ts](/src/ordens-servico/entities/ordem-servico.entity.ts) | TypeScript | 112 | 1 | 31 | 144 |
+| [src/ordens-servico/entities/order-service-responsible-expense.entity.ts](/src/ordens-servico/entities/order-service-responsible-expense.entity.ts) | TypeScript | 32 | 0 | 9 | 41 |
+| [src/ordens-servico/entities/order-service-responsible.entity.ts](/src/ordens-servico/entities/order-service-responsible.entity.ts) | TypeScript | 44 | 0 | 12 | 56 |
+| [src/ordens-servico/entities/proposta-item.entity.ts](/src/ordens-servico/entities/proposta-item.entity.ts) | TypeScript | 34 | 1 | 9 | 44 |
+| [src/ordens-servico/entities/proposta.entity.ts](/src/ordens-servico/entities/proposta.entity.ts) | TypeScript | 79 | 1 | 24 | 104 |
+| [src/ordens-servico/itens-os.controller.ts](/src/ordens-servico/itens-os.controller.ts) | TypeScript | 48 | 2 | 6 | 56 |
+| [src/ordens-servico/itens-os.service.ts](/src/ordens-servico/itens-os.service.ts) | TypeScript | 137 | 6 | 20 | 163 |
+| [src/ordens-servico/ordens-servico.controller.ts](/src/ordens-servico/ordens-servico.controller.ts) | TypeScript | 135 | 0 | 12 | 147 |
+| [src/ordens-servico/ordens-servico.module.ts](/src/ordens-servico/ordens-servico.module.ts) | TypeScript | 54 | 0 | 2 | 56 |
+| [src/ordens-servico/ordens-servico.service.ts](/src/ordens-servico/ordens-servico.service.ts) | TypeScript | 423 | 34 | 96 | 553 |
+| [src/ordens-servico/order-service-responsible-expense.controller.ts](/src/ordens-servico/order-service-responsible-expense.controller.ts) | TypeScript | 64 | 0 | 6 | 70 |
+| [src/ordens-servico/order-service-responsible-expense.module.ts](/src/ordens-servico/order-service-responsible-expense.module.ts) | TypeScript | 13 | 0 | 1 | 14 |
+| [src/ordens-servico/order-service-responsible-expense.service.ts](/src/ordens-servico/order-service-responsible-expense.service.ts) | TypeScript | 86 | 0 | 14 | 100 |
+| [src/ordens-servico/order-service-responsible.controller.ts](/src/ordens-servico/order-service-responsible.controller.ts) | TypeScript | 60 | 0 | 6 | 66 |
+| [src/ordens-servico/order-service-responsible.module.ts](/src/ordens-servico/order-service-responsible.module.ts) | TypeScript | 14 | 0 | 1 | 15 |
+| [src/ordens-servico/order-service-responsible.service.ts](/src/ordens-servico/order-service-responsible.service.ts) | TypeScript | 88 | 0 | 13 | 101 |
+| [src/produtos-servicos/dto/create-produto-servico.dto.ts](/src/produtos-servicos/dto/create-produto-servico.dto.ts) | TypeScript | 80 | 0 | 20 | 100 |
+| [src/produtos-servicos/dto/update-produto-servico.dto.ts](/src/produtos-servicos/dto/update-produto-servico.dto.ts) | TypeScript | 5 | 0 | 1 | 6 |
+| [src/produtos-servicos/entities/produto-servico.entity.ts](/src/produtos-servicos/entities/produto-servico.entity.ts) | TypeScript | 94 | 0 | 29 | 123 |
+| [src/produtos-servicos/produtos-servicos.controller.ts](/src/produtos-servicos/produtos-servicos.controller.ts) | TypeScript | 92 | 0 | 6 | 98 |
+| [src/produtos-servicos/produtos-servicos.module.ts](/src/produtos-servicos/produtos-servicos.module.ts) | TypeScript | 16 | 3 | 3 | 22 |
+| [src/produtos-servicos/produtos-servicos.service.ts](/src/produtos-servicos/produtos-servicos.service.ts) | TypeScript | 157 | 0 | 31 | 188 |
+| [src/propostas/propostas.controller.ts](/src/propostas/propostas.controller.ts) | TypeScript | 56 | 1 | 8 | 65 |
+| [src/propostas/propostas.module.ts](/src/propostas/propostas.module.ts) | TypeScript | 15 | 1 | 2 | 18 |
+| [src/propostas/propostas.service.ts](/src/propostas/propostas.service.ts) | TypeScript | 180 | 0 | 34 | 214 |
+| [src/reports/reports.controller.ts](/src/reports/reports.controller.ts) | TypeScript | 90 | 0 | 9 | 99 |
+| [src/reports/reports.module.ts](/src/reports/reports.module.ts) | TypeScript | 11 | 0 | 2 | 13 |
+| [src/reports/reports.service.ts](/src/reports/reports.service.ts) | TypeScript | 51 | 0 | 10 | 61 |
+| [src/reports/templates/proposta-pdf.template.ts](/src/reports/templates/proposta-pdf.template.ts) | TypeScript | 600 | 0 | 48 | 648 |
+| [src/transferencias/dto/create-transferencia.dto.ts](/src/transferencias/dto/create-transferencia.dto.ts) | TypeScript | 47 | 0 | 5 | 52 |
+| [src/transferencias/entities/transferencia.entity.ts](/src/transferencias/entities/transferencia.entity.ts) | TypeScript | 104 | 0 | 12 | 116 |
+| [src/transferencias/transferencias.controller.ts](/src/transferencias/transferencias.controller.ts) | TypeScript | 154 | 0 | 4 | 158 |
+| [src/transferencias/transferencias.module.ts](/src/transferencias/transferencias.module.ts) | TypeScript | 25 | 0 | 1 | 26 |
+| [src/transferencias/transferencias.service.ts](/src/transferencias/transferencias.service.ts) | TypeScript | 303 | 0 | 47 | 350 |
+| [src/users/user.entity.ts](/src/users/user.entity.ts) | TypeScript | 65 | 0 | 25 | 90 |
+| [src/users/users.module.ts](/src/users/users.module.ts) | TypeScript | 8 | 0 | 2 | 10 |
+| [src/users/users.service.ts](/src/users/users.service.ts) | TypeScript | 44 | 0 | 11 | 55 |
+| [test/app.e2e-spec.ts](/test/app.e2e-spec.ts) | TypeScript | 24 | 0 | 6 | 30 |
+| [test/jest-e2e.json](/test/jest-e2e.json) | JSON | 9 | 0 | 1 | 10 |
+| [tsconfig.build.json](/tsconfig.build.json) | JSON | 4 | 0 | 1 | 5 |
+| [tsconfig.json](/tsconfig.json) | JSON with Comments | 25 | 0 | 1 | 26 |
+
+[Summary](results.md) / Details / [Diff Summary](diff.md) / [Diff Details](diff-details.md)
