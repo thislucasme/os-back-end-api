@@ -11,10 +11,15 @@ import { ItemOs } from 'src/ordens-servico/entities/item-os.entity';
 
 @Module({
   imports: [
-    UsersModule,
-    TypeOrmModule.forFeature([User, ItemOsResponsavel, OrderServiceResponsibleExpense, OrderServiceResponsible, ItemOs]),
+  
+    TypeOrmModule.forFeature([
+        User, ItemOsResponsavel,
+        OrderServiceResponsibleExpense, OrderServiceResponsible, ItemOs
+    ]),
+      UsersModule,
   ],
   controllers: [PagamentosController],
   providers: [PagamentosService],
+  exports:[PagamentosService]
 })
 export class PagamentosModule {}

@@ -79,12 +79,12 @@ export class ItemOs {
   data_liberacao?: Date;
 
   @Column({
-  name: 'status_pagamento',
-  type: 'enum',
-  enum: ItemOsStatusPagamento,
-  default: ItemOsStatusPagamento.PENDENTE,
-})
-statusPagamento!: ItemOsStatusPagamento;
+    name: 'status_pagamento',
+    type: 'enum',
+    enum: ItemOsStatusPagamento,
+    default: ItemOsStatusPagamento.PENDENTE,
+  })
+  statusPagamento!: ItemOsStatusPagamento;
 
   @CreateDateColumn({ name: 'created_at' })
   createdAt!: Date;
