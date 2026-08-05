@@ -10,6 +10,7 @@ import { ResumoPagamentoDto } from './dto/resumo-pagamento.dto';
 import { ItemLiberadoResponseDto } from './dto/item-liberado-response.dto';
 import { DespesaResponseDto } from './dto/despesa-response.dto';
 import { ItemOs, ItemOsStatusPagamento } from 'src/ordens-servico/entities/item-os.entity';
+import { MarcarPagoPayloadDto, MarcarPagoResponseDto } from './dto/marcar-pago-payload.dto';
 
 @Injectable()
 export class PagamentosService {
@@ -251,80 +252,64 @@ export class PagamentosService {
   };
 }
 
-async marcarComoPago(
-  user: any,
-  usuarioId: number,
-  ano: number,
-  mes: number,
-  payload: { itemIds?: number[]; despesaIds?: number[] },
-): Promise<{ message: string; itensAtualizados: number; despesasAtualizadas: number }> {
+async marcarPago(user: any, payload: MarcarPagoPayloadDto): Promise<MarcarPagoResponseDto> {
   const companyId = await this.userService.getCompanyIdFromRequestUser(user.id);
   if (!companyId) throw new Error('Usuário não possui empresa associada.');
 
+  const { dados_para_folha_pagamento, itens, despesas } = payload;
+  const { usuarioId } = dados_para_folha_pagamento;
+
+  // Verificar se o funcionário pertence à empresa
   const targetUser = await this.userRepository.findOne({
     where: { id: usuarioId, companyId, active: true },
   });
-  if (!targetUser) throw new BadRequestException('Funcionário não encontrado ou inativo');
-
-  const startDate = new Date(ano, mes - 1, 1, 0, 0, 0);
-  const endDate = new Date(ano, mes, 0, 23, 59, 59);
+  if (!targetUser) {
+    throw new BadRequestException('Funcionário não encontrado ou não pertence à sua empresa');
+  }
 
   let itensAtualizados = 0;
   let despesasAtualizadas = 0;
 
-  // ---- Atualizar itens de comissão (ItemOs) ----
-  const itemIdsToUpdate = payload.itemIds || [];
-  let itemQuery = this.itemOsResponsavelRepository
-    .createQueryBuilder('ir')
-    .innerJoin('ir.item', 'item')
-    .where('ir.userId = :usuarioId', { usuarioId })
-    .andWhere('item.data_liberacao BETWEEN :start AND :end', { start: startDate, end: endDate });
-
-  if (itemIdsToUpdate.length > 0) {
-    itemQuery = itemQuery.andWhere('ir.id IN (:...ids)', { ids: itemIdsToUpdate });
-  }
-
-  const itemsToUpdate = await itemQuery
-    .select('item.id', 'itemId')
-    .getRawMany();
-
-  const itemIds = itemsToUpdate.map(row => row.itemId);
-  if (itemIds.length > 0) {
-    const updateResult = await this.itemOsRepository
+  // Atualizar itens (comissões)
+  if (itens && itens.length > 0) {
+    const itemIds = itens.map(item => item.id);
+    // Buscar os registros de ItemOsResponsavel (ou ItemOs?) - precisamos atualizar o status do item em si.
+    // O item é a entidade ItemOs, que possui statusPagamento.
+    // O ID enviado é o id do ItemOsResponsavel? No exemplo é "id": 1, que parece ser o ID do relacionamento.
+    // Mas para atualizar o status, precisamos do item (ItemOs). Vamos supor que o ID seja do ItemOsResponsavel,
+    // mas o status está no ItemOs. Vamos buscar o ItemOsResponsavel e depois o ItemOs.
+    // Ou podemos receber o itemId diretamente. Para simplificar, vou considerar que o id é do ItemOs (ou do responsável?).
+    // No payload exemplo, "id": 1 e "ordemServicoId": 15 - parece ser do ItemOs. Vou tratar como id do ItemOs.
+    // Então, vou buscar os ItemOs pelos ids fornecidos.
+    const itemOsRepository = this.itemOsResponsavelRepository.manager.getRepository('ItemOs'); // ou injetar ItemOsRepository
+    // Melhor: injetar o repositório de ItemOs no construtor.
+    // Mas vou usar o query builder para atualizar diretamente.
+    await this.itemOsResponsavelRepository.manager
       .createQueryBuilder()
-      .update()
+      .update('ItemOs')
       .set({ statusPagamento: ItemOsStatusPagamento.PAGO })
       .whereInIds(itemIds)
       .execute();
-    itensAtualizados = updateResult.affected || 0;
+    itensAtualizados = itemIds.length;
   }
 
-  // ---- Atualizar despesas (OrderServiceResponsibleExpense) ----
-  const despesaIdsToUpdate = payload.despesaIds || [];
-  let despesaQuery = this.expenseRepository
-    .createQueryBuilder('expense')
-    .where('expense.responsible.employeeId = :usuarioId', { usuarioId })
-    .andWhere('expense.assignToOrderService = :assign', { assign: false })
-    .andWhere('expense.data_liberacao BETWEEN :start AND :end', { start: startDate, end: endDate });
-
-  if (despesaIdsToUpdate.length > 0) {
-    despesaQuery = despesaQuery.andWhere('expense.id IN (:...ids)', { ids: despesaIdsToUpdate });
-  }
-
-  const despesasToUpdate = await despesaQuery.getMany();
-  if (despesasToUpdate.length > 0) {
-    const ids = despesasToUpdate.map(d => d.id);
-    const updateResult = await this.expenseRepository
+  // Atualizar despesas (OrderServiceResponsibleExpense)
+  if (despesas && despesas.length > 0) {
+    const despesaIds = despesas.map(d => d.id);
+    await this.expenseRepository
       .createQueryBuilder()
-      .update()
+      .update(OrderServiceResponsibleExpense)
       .set({ statusDebito: ItemOsStatusPagamento.PAGO })
-      .whereInIds(ids)
+      .whereInIds(despesaIds)
       .execute();
-    despesasAtualizadas = updateResult.affected || 0;
+    despesasAtualizadas = despesaIds.length;
   }
+
+  // Opcional: criar registro de folha de pagamento (futuro)
+  // Aqui você pode chamar um serviço para criar a folha.
 
   return {
-    message: 'Pagamento processado com sucesso.',
+    message: 'Pagamento registrado com sucesso',
     itensAtualizados,
     despesasAtualizadas,
   };

@@ -1,10 +1,11 @@
-import { BadRequestException, Controller, Get, Param, ParseIntPipe, Query, Req, UseGuards } from '@nestjs/common';
+import { BadRequestException, Body, Controller, Get, Param, ParseIntPipe, Post, Query, Req, UseGuards } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiParam, ApiQuery, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
 import { PagamentosService } from './pagamentos.service';
 import { PagamentoResponseDto } from './dto/pagamento-response.dto';
 import { ItemLiberadoResponseDto } from './dto/item-liberado-response.dto';
 import { ResumoPagamentoDto } from './dto/resumo-pagamento.dto';
+import { MarcarPagoPayloadDto, MarcarPagoResponseDto } from './dto/marcar-pago-payload.dto';
 
 @ApiTags('Pagamentos')
 @ApiBearerAuth()
@@ -66,4 +67,15 @@ async getResumoPorUsuario(
 
   return this.service.findItensLiberadosPorUsuario(req.user, usuarioId, ano, mes);
 }
+
+  @Post('marcar-pago')
+  @ApiOperation({ summary: 'Marcar itens e despesas como pagos' })
+  @ApiResponse({ status: 200, type: MarcarPagoResponseDto })
+  async marcarPago(
+    @Req() req,
+    @Body() payload: MarcarPagoPayloadDto,
+  ): Promise<MarcarPagoResponseDto> {
+    return this.service.marcarPago(req.user, payload);
+  }
+
 }
