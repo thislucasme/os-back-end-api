@@ -1,3 +1,4 @@
+import { PagamentosModule } from './pagamentos/pagamentos.module';
 import { DespesasModule } from './despesas/despesas.module';
 import { TransferenciasModule } from './transferencias/transferencias.module';
 import { MovimentacoesModule } from './movimentacoes/movimentacoes.module';
@@ -23,6 +24,7 @@ import { Company } from './companies/ company.entity';
 
 @Module({
   imports: [
+    PagamentosModule,
     DespesasModule,
     TransferenciasModule,
     MovimentacoesModule,

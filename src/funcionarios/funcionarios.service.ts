@@ -79,6 +79,7 @@ export class FuncionariosService {
       city: dto.city || null,
       state: dto.state || null,
       zipCode: dto.zipCode || null,
+      salarioBase: dto.salarioBase || 0,
 
       active: dto.active ?? true,
       observations: dto.observations || null,
@@ -193,6 +194,7 @@ export class FuncionariosService {
     funcionario.department = dto.department ?? funcionario.department;
     funcionario.registrationNumber =
       dto.registrationNumber ?? funcionario.registrationNumber;
+    funcionario.salarioBase = dto.salarioBase ?? funcionario.salarioBase;
 
     funcionario.birthDate = dto.birthDate
       ? new Date(dto.birthDate)

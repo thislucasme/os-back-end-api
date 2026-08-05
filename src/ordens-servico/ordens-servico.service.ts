@@ -37,6 +37,9 @@ import { OrderServiceResponsibleExpenseService } from './order-service-responsib
 import { DespesasService } from 'src/despesas/despesas.service';
 import { getExpenseTypeLabel } from './constant/expense-types';
 import { CreateDespesaDto } from 'src/despesas/dto/create-despesa.dto';
+import { OrdemServicoItem } from './entities/ordem-servico-item.entity';
+import { ItensOsService } from './itens-os.service';
+import { ItemOsLiberacao } from './entities/item-os.entity';
 
 @Injectable()
 export class OrdensServicoService {
@@ -57,6 +60,7 @@ export class OrdensServicoService {
     private readonly usersRepo: Repository<User>,
 
     private readonly orderServiceResponsibleExpenseService: OrderServiceResponsibleExpenseService,
+    private readonly itensOsService: ItensOsService,
 
     @Inject(forwardRef(() => DespesasService))
     private readonly despesasService: DespesasService,
@@ -572,7 +576,7 @@ export class OrdensServicoService {
     dto: ConcluirOrdemServicoDto,
     userId: number,
   ) {
-    if(!dto.contaEntradaId){
+    if (!dto.contaEntradaId) {
       throw new BadRequestException("Conta para entrada deve ser configurado")
     }
     // 1. Buscar a OS
@@ -592,66 +596,79 @@ export class OrdensServicoService {
         dataDespesa: despesa.createdAt.toISOString().split('T')[0],
         observacao: `Gasto do responsável ID ${despesa.orderServiceResponsibleId}`,
       };
-      console.log(createDto, "user id")
 
       await this.despesasService.create({ id: userId }, createDto);
     }
-      // this.despesasService.create()
+    // this.despesasService.create()
 
-      // 2. Verificar se já está concluída (opcional)
-      // if (os.status === OrdemServicoStatus.ENTREGUE) {
-      //   throw new ConflictException('Esta OS já foi concluída.');
-      // }
+    // 2. Verificar se já está concluída (opcional)
+    // if (os.status === OrdemServicoStatus.ENTREGUE) {
+    //   throw new ConflictException('Esta OS já foi concluída.');
+    // }
 
-      // 3. Atualizar status para ENTREGUE (ou CONCLUIDA)
-      os.status = OrdemServicoStatus.ENTREGUE;
+    // 3. Atualizar status para ENTREGUE (ou CONCLUIDA)
+    os.status = OrdemServicoStatus.ENTREGUE;
 
-      // 4. Salvar os IDs das contas e a observação (se for guardar na OS)
-      if (dto.contaEntradaId !== undefined) {
-        os.contaEntradaId = dto.contaEntradaId;
-      }
-      if (dto.contaSaidaId !== undefined) {
-        os.contaSaidaId = dto.contaSaidaId;
-      }
-      // Se você quiser guardar a observação em algum campo, como 'observacoesInternas' ou 'mensagemFinal':
-      if (dto.observacao) {
-        os.observacoesInternas = dto.observacao; // ou 'mensagemFinal'
-      }
-
-      // 5. Salvar a OS
-      const savedOs = await this.osRepo.save(os);
-
-      // 6. Registrar histórico
-      await this.addHistorico(
-        savedOs.id,
-        'OS concluída',
-        `OS finalizada com sucesso. Conta entrada: ${dto.contaEntradaId || 'N/A'}, Conta saída: ${dto.contaSaidaId || 'N/A'}. Obs: ${dto.observacao || ''}`,
-      );
-
-      // 7. SIMULAR criação de venda e contas (você deve substituir pela lógica real)
-      // Aqui você chamaria os serviços de Venda e Contas a Pagar/Receber
-      // Gerar venda a partir dos itens da OS
-      const vendaId = Math.floor(Math.random() * 1000) + 100; // mock
-
-      // Gerar conta a receber (entrada)
-      const contaRecebimentoId = Math.floor(Math.random() * 1000) + 200; // mock
-
-      // Gerar contas a pagar (comissões, custos, etc) - pode ser várias
-      // Supondo que você tenha uma lista de pagamentos a gerar
-      const pagamentosIds = [
-        Math.floor(Math.random() * 1000) + 300,
-        Math.floor(Math.random() * 1000) + 400,
-      ]; // mock
-
-      // 8. Retornar conforme esperado
-      return {
-        message: 'OS concluída com sucesso',
-        ordemServicoId: savedOs.id,
-        vendaId,
-        contasGeradas: {
-          recebimento: contaRecebimentoId,
-          pagamentos: pagamentosIds,
-        },
-      };
+    // 4. Salvar os IDs das contas e a observação (se for guardar na OS)
+    if (dto.contaEntradaId !== undefined) {
+      os.contaEntradaId = dto.contaEntradaId;
     }
+    if (dto.contaSaidaId !== undefined) {
+      os.contaSaidaId = dto.contaSaidaId;
+    }
+    // Se você quiser guardar a observação em algum campo, como 'observacoesInternas' ou 'mensagemFinal':
+    if (dto.observacao) {
+      os.observacoesInternas = dto.observacao; // ou 'mensagemFinal'
+    }
+
+    // 5. Salvar a OS
+    const savedOs = await this.osRepo.save(os);
+
+    // 6. Registrar histórico
+    await this.addHistorico(
+      savedOs.id,
+      'OS concluída',
+      `OS finalizada com sucesso. Conta entrada: ${dto.contaEntradaId || 'N/A'}, Conta saída: ${dto.contaSaidaId || 'N/A'}. Obs: ${dto.observacao || ''}`,
+    );
+
+
+    const itensOs = await this.itensOsService.findAllByOrdem(id);
+    const itensParaAtualizar = itensOs.filter(
+      item => item.liberacao === ItemOsLiberacao.NA_CONCLUSAO_OS
+    );
+
+    if (itensParaAtualizar.length > 0) {
+      for (const item of itensParaAtualizar) {
+        item.data_liberacao = new Date();
+      }
+      // Salva todos de uma vez
+      await this.itensOsService.marcarLiberacaoNaConclusao(id);
+    }
+
+    // 7. SIMULAR criação de venda e contas (você deve substituir pela lógica real)
+    // Aqui você chamaria os serviços de Venda e Contas a Pagar/Receber
+    // Gerar venda a partir dos itens da OS
+    const vendaId = Math.floor(Math.random() * 1000) + 100; // mock
+
+    // Gerar conta a receber (entrada)
+    const contaRecebimentoId = Math.floor(Math.random() * 1000) + 200; // mock
+
+    // Gerar contas a pagar (comissões, custos, etc) - pode ser várias
+    // Supondo que você tenha uma lista de pagamentos a gerar
+    const pagamentosIds = [
+      Math.floor(Math.random() * 1000) + 300,
+      Math.floor(Math.random() * 1000) + 400,
+    ]; // mock
+
+    // 8. Retornar conforme esperado
+    return {
+      message: 'OS concluída com sucesso',
+      ordemServicoId: savedOs.id,
+      vendaId,
+      contasGeradas: {
+        recebimento: contaRecebimentoId,
+        pagamentos: pagamentosIds,
+      },
+    };
   }
+}

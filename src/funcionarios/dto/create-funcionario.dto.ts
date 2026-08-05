@@ -3,9 +3,11 @@ import {
   IsBoolean,
   IsDateString,
   IsEmail,
+  IsNumber,
   IsOptional,
   IsString,
   MaxLength,
+  Min,
 } from 'class-validator';
 
 export class CreateFuncionarioDto {
@@ -76,6 +78,15 @@ export class CreateFuncionarioDto {
   @IsString()
   @MaxLength(100)
   department?: string;
+
+  @ApiPropertyOptional({
+    example: 3500.50,
+    description: 'Salário base do funcionário em reais',
+  })
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
+  salarioBase?: number;
 
   @ApiPropertyOptional({
     example: 'FUNC-001',

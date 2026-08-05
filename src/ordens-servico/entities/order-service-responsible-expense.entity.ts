@@ -8,6 +8,7 @@ import {
   UpdateDateColumn,
 } from 'typeorm';
 import { OrderServiceResponsible } from './order-service-responsible.entity';
+import { ItemOsLiberacao, ItemOsStatusPagamento } from './item-os.entity';
 
 @Entity('order_service_responsible_expenses')
 export class OrderServiceResponsibleExpense {
@@ -32,6 +33,24 @@ export class OrderServiceResponsibleExpense {
 
   @Column({ type: 'boolean', default: true })
   assignToOrderService!: boolean;
+
+  @Column({
+    type: 'enum',
+    enum: ItemOsLiberacao,
+    default: ItemOsLiberacao.NA_CONCLUSAO_OS,
+  })
+  liberacao!: ItemOsLiberacao;
+
+  @Column({ type: 'timestamp', nullable: true })
+  data_liberacao?: Date;
+
+  @Column({
+    name: 'status_debito',
+    type: 'enum',
+    enum: ItemOsStatusPagamento,
+    default: ItemOsStatusPagamento.PENDENTE,
+  })
+  statusDebito!: ItemOsStatusPagamento;
 
   @CreateDateColumn()
   createdAt!: Date;

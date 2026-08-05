@@ -5,7 +5,7 @@ import {
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { In, Repository } from 'typeorm';
-import { ItemOs, ItemOsTipo, ItemOsOrigem } from './entities/item-os.entity';
+import { ItemOs, ItemOsTipo, ItemOsOrigem, ItemOsLiberacao } from './entities/item-os.entity';
 import { ItemOsResponsavel } from './entities/item-os-responsavel.entity';
 import { OrdemServico } from './entities/ordem-servico.entity';
 import { ProdutoServico } from 'src/produtos-servicos/entities/produto-servico.entity';
@@ -153,6 +153,17 @@ export class ItensOsService {
     // Recarregar com relações
     return this.findOne(id);
   }
+  async marcarLiberacaoNaConclusao(ordemServicoId: number): Promise<void> {
+  await this.itemOsRepository.update(
+    {
+      ordemServicoId,
+      liberacao: ItemOsLiberacao.NA_CONCLUSAO_OS,
+    },
+    {
+      data_liberacao: new Date(),
+    }
+  );
+}
 
   async remove(id: number): Promise<void> {
     const item = await this.findOne(id);

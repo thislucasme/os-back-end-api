@@ -16,7 +16,10 @@ export enum ItemOsLiberacao {
   APOS_RECEBIMENTO = 'APOS_RECEBIMENTO',
   NA_CONCLUSAO_OS = 'NA_CONCLUSAO_OS',
 }
-
+export enum ItemOsStatusPagamento {
+  PENDENTE = 'PENDENTE',
+  PAGO = 'PAGO',
+}
 export enum ItemOsTipo {
   PRODUTO = 'PRODUTO',
   SERVICO = 'SERVICO',
@@ -74,6 +77,14 @@ export class ItemOs {
 
   @Column({ type: 'timestamp', nullable: true })
   data_liberacao?: Date;
+
+  @Column({
+  name: 'status_pagamento',
+  type: 'enum',
+  enum: ItemOsStatusPagamento,
+  default: ItemOsStatusPagamento.PENDENTE,
+})
+statusPagamento!: ItemOsStatusPagamento;
 
   @CreateDateColumn({ name: 'created_at' })
   createdAt!: Date;

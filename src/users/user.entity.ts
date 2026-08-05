@@ -82,6 +82,9 @@ export class User {
   @Column({ type: 'text', nullable: true })
   observations!: string | null;
 
+  @Column({ type: 'decimal', precision: 10, scale: 2, nullable: true })
+  salarioBase!: number | null;
+
   @CreateDateColumn()
   createdAt!: Date;
 
