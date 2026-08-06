@@ -1,4 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
+import { IsNumber, IsOptional } from 'class-validator';
 
 class PeriodoDto {
   @ApiProperty()
@@ -29,6 +30,10 @@ class DadosFolhaDto {
 
   @ApiProperty({ type: PeriodoDto })
   periodo!: PeriodoDto;
+
+    @IsOptional()
+    @IsNumber()
+    contaSaidaId?: number;
 }
 
 class ItemFolhaDto {

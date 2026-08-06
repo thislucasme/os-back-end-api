@@ -1,3 +1,6 @@
+import { CryptoModule } from './assas/cypto/crypto.module';
+import { AssasCobrancasModule } from './assas/cobrancas/assas-cobrancas.module';
+import { ClientesAssasModule } from './assas/clientes/clientes-assas.module';
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
@@ -25,6 +28,9 @@ import { FolhaPagamentoModule } from './folha-pagamento/folha-pagamento.module';
 
 @Module({
   imports: [
+    CryptoModule,
+    AssasCobrancasModule,
+    ClientesAssasModule,
     FolhaPagamentoModule,
     PagamentosModule,
     DespesasModule,

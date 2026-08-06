@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { forwardRef, Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { User } from '../users/user.entity';
 import { ItemOsResponsavel } from '../ordens-servico/entities/item-os-responsavel.entity';
@@ -8,15 +8,18 @@ import { PagamentosService } from './pagamentos.service';
 import { UsersModule } from 'src/users/users.module';
 import { OrderServiceResponsible } from 'src/ordens-servico/entities/order-service-responsible.entity';
 import { ItemOs } from 'src/ordens-servico/entities/item-os.entity';
+import { FolhaPagamentoModule } from 'src/folha-pagamento/folha-pagamento.module';
+import { DespesasModule } from 'src/despesas/despesas.module';
 
 @Module({
   imports: [
-  
+forwardRef(() => FolhaPagamentoModule),
     TypeOrmModule.forFeature([
         User, ItemOsResponsavel,
         OrderServiceResponsibleExpense, OrderServiceResponsible, ItemOs
     ]),
       UsersModule,
+      DespesasModule
   ],
   controllers: [PagamentosController],
   providers: [PagamentosService],

@@ -1,5 +1,5 @@
 // folha-pagamento.service.ts (versão com mapper)
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException, Inject, forwardRef } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 
@@ -13,14 +13,18 @@ import { FolhaPagamentoResponseDto } from './tdo/folha-pagamento-response.dto';
 
 @Injectable()
 export class FolhaPagamentoService {
-  constructor(
-    @InjectRepository(FolhaPagamento)
-    private repo: Repository<FolhaPagamento>,
-    @InjectRepository(User)
-    private userRepo: Repository<User>,
-    private pagamentosService: PagamentosService,
-    private usersService: UsersService,
-  ) {}
+constructor(
+  @InjectRepository(FolhaPagamento)
+  private repo: Repository<FolhaPagamento>,
+
+  @InjectRepository(User)
+  private userRepo: Repository<User>,
+
+  @Inject(forwardRef(() => PagamentosService))
+  private readonly pagamentosService: PagamentosService,
+
+  private readonly usersService: UsersService,
+) {}
 
   // ----- Mapper: entidade -> DTO de resposta -----
 private toResponseDto(entity: FolhaPagamento): FolhaPagamentoResponseDto {

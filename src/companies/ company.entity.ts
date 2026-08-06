@@ -1,10 +1,10 @@
 import { ClienteFornecedor } from 'src/clientes-fornecedores/entities/cliente-fornecedor.entity';
 import { User } from 'src/users/user.entity';
 import {
-    Column,
-    Entity,
-    OneToMany,
-    PrimaryGeneratedColumn
+  Column,
+  Entity,
+  OneToMany,
+  PrimaryGeneratedColumn
 } from 'typeorm';
 
 @Entity('companies')
@@ -62,4 +62,10 @@ export class Company {
 
   @Column({ nullable: true })
   logoUrl!: string;
+
+@Column({
+  type: 'text',
+  nullable: true,
+})
+apiToken?: string;
 }

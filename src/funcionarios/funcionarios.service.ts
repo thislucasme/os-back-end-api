@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   ConflictException,
   ForbiddenException,
   Injectable,
@@ -10,13 +11,20 @@ import * as bcrypt from 'bcrypt';
 import { User } from 'src/users/user.entity';
 import { CreateFuncionarioDto } from './dto/create-funcionario.dto';
 import { UpdateFuncionarioDto } from './dto/update-funcionario.dto';
+import { ClientesAssasService } from 'src/assas/clientes/clientes-assas.service';
+import { CreateClienteDto } from 'src/assas/clientes/dto/create-cliente.dto';
+import { CompaniesService } from 'src/companies/companies.service';
+import { CryptoService } from 'src/assas/cypto/crypto.service';
 
 @Injectable()
 export class FuncionariosService {
   constructor(
     @InjectRepository(User)
     private readonly usersRepository: Repository<User>,
-  ) {}
+    private readonly clienteAssasService: ClientesAssasService,
+    private readonly companyService: CompaniesService,
+    private readonly cryptoService: CryptoService
+  ) { }
 
   private async getCompanyIdFromRequestUser(requestUser: any): Promise<number> {
     const userId = requestUser?.id;
@@ -46,8 +54,18 @@ export class FuncionariosService {
     return user.companyId;
   }
 
+  async createUserAssas(companyId: number, clienteAssasPayload: CreateClienteDto) {
+    const assasApiToken = await this.companyService.getApiTokenByCompanyId(companyId);
+    if (assasApiToken) {
+      const clientAssas = await this.clienteAssasService.create(assasApiToken, clienteAssasPayload)
+      return clientAssas
+    }
+  }
+
   async create(requestUser: any, dto: CreateFuncionarioDto) {
     const companyId = await this.getCompanyIdFromRequestUser(requestUser);
+
+
 
     const exists = await this.usersRepository.findOne({
       where: { email: dto.email },
@@ -56,13 +74,24 @@ export class FuncionariosService {
     if (exists) {
       throw new ConflictException('E-mail já cadastrado.');
     }
-
+    if (!dto.cpf) {
+      throw new BadRequestException("CPF ou CNPJ deve ser enviado")
+    }
+    const clienteAssasPayload: CreateClienteDto = {
+      name: dto.name!,
+      cpfCnpj: dto.cpf!,
+      email: dto.email
+    }
+    const userAssas = await this.createUserAssas(companyId, clienteAssasPayload)
+    if (userAssas && userAssas.id) {
+      dto.asaasCustomerId = userAssas.id
+    }
     const funcionario = this.usersRepository.create({
       email: dto.email,
       password: await bcrypt.hash(dto.password, 10),
       name: dto.name || null,
       companyId,
-
+      asaasCustomerId: dto.asaasCustomerId || undefined,
       cpf: dto.cpf || null,
       rg: dto.rg || null,
       phone: dto.phone || null,
@@ -112,15 +141,15 @@ export class FuncionariosService {
 
     const where = search
       ? [
-          { ...baseWhere, name: ILike(`%${search}%`) },
-          { ...baseWhere, email: ILike(`%${search}%`) },
-          { ...baseWhere, cpf: ILike(`%${search}%`) },
-          { ...baseWhere, phone: ILike(`%${search}%`) },
-          { ...baseWhere, whatsapp: ILike(`%${search}%`) },
-          { ...baseWhere, position: ILike(`%${search}%`) },
-          { ...baseWhere, department: ILike(`%${search}%`) },
-          { ...baseWhere, registrationNumber: ILike(`%${search}%`) },
-        ]
+        { ...baseWhere, name: ILike(`%${search}%`) },
+        { ...baseWhere, email: ILike(`%${search}%`) },
+        { ...baseWhere, cpf: ILike(`%${search}%`) },
+        { ...baseWhere, phone: ILike(`%${search}%`) },
+        { ...baseWhere, whatsapp: ILike(`%${search}%`) },
+        { ...baseWhere, position: ILike(`%${search}%`) },
+        { ...baseWhere, department: ILike(`%${search}%`) },
+        { ...baseWhere, registrationNumber: ILike(`%${search}%`) },
+      ]
       : baseWhere;
 
     const [data, total] = await this.usersRepository.findAndCount({

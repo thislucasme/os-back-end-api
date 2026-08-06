@@ -1,0 +1,1 @@
+export const ASAAS_API_URL = 'https://api-sandbox.asaas.com/v3';

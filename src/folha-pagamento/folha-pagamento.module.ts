@@ -9,9 +9,10 @@ import { FolhaPagamento } from './entities/folha-pagamento.entity';
 import { User } from 'src/users/user.entity';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([FolhaPagamento, User]),     forwardRef(() => PagamentosModule),
+  imports: [TypeOrmModule.forFeature([FolhaPagamento, User]), forwardRef(() => PagamentosModule),forwardRef(() => PagamentosModule),
     forwardRef(() => UsersModule),],
   controllers: [FolhaPagamentoController],
   providers: [FolhaPagamentoService],
+  exports:[FolhaPagamentoService]
 })
 export class FolhaPagamentoModule {}

@@ -85,6 +85,9 @@ export class User {
   @Column({ type: 'decimal', precision: 10, scale: 2, nullable: true })
   salarioBase!: number | null;
 
+  @Column({ nullable: true })
+  asaasCustomerId?: string;
+
   @CreateDateColumn()
   createdAt!: Date;
 

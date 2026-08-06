@@ -13,4 +13,5 @@ export class CreateCompanyDto {
   zipCode?: string;
   observations?: string;
   logoUrl?: string;
+   apiToken?: string;
 }
