@@ -67,6 +67,9 @@ export class ClienteFornecedor {
   @Column({ type: 'text', nullable: true })
   observacoes!: string;
 
+    @Column({ nullable: true })
+  asaasCustomerId?: string;
+
   @CreateDateColumn()
   createdAt!: Date;
 

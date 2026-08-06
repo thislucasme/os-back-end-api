@@ -76,6 +76,14 @@ export class CreateClienteFornecedorDto {
   @MaxLength(255)
   endereco?: string;
 
+    @ApiPropertyOptional({
+    example: 'cus_000008587289',
+  })
+  @IsOptional()
+  @IsString()
+  @MaxLength(20)
+  asaasCustomerId?: string;
+
   @ApiPropertyOptional({
     example: 'Prefere contato pelo WhatsApp.',
   })

@@ -41,6 +41,7 @@ export class CompaniesController {
     @Request() req,
     @Body() dto: UpdateCompanyDto,
   ) {
+    console.log(dto)
     return this.companiesService.updateProfile(req.user.id, dto);
   }
 

@@ -63,9 +63,9 @@ export class Company {
   @Column({ nullable: true })
   logoUrl!: string;
 
-@Column({
-  type: 'text',
-  nullable: true,
-})
-apiToken?: string;
+  @Column({ 
+    type: 'text',
+    nullable: true,
+  })
+  apiToken?: string;
 }

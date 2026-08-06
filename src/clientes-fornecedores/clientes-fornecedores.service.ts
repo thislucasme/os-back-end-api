@@ -11,6 +11,9 @@ import { CreateClienteFornecedorDto } from './dto/create-cliente-fornecedor.dto'
 import { UpdateClienteFornecedorDto } from './dto/update-cliente-fornecedor.dto';
 import { ClienteFornecedor } from './entities/cliente-fornecedor.entity';
 import { Company } from 'src/companies/ company.entity';
+import { CompaniesService } from 'src/companies/companies.service';
+import { CreateClienteDto } from 'src/assas/clientes/dto/create-cliente.dto';
+import { ClientesAssasService } from 'src/assas/clientes/clientes-assas.service';
 
 @Injectable()
 export class ClientesFornecedoresService {
@@ -23,6 +26,10 @@ export class ClientesFornecedoresService {
 
         @InjectRepository(Company)
         private readonly companyRepo: Repository<Company>,
+
+        private readonly companyService: CompaniesService,
+
+        private readonly clienteAssasService: ClientesAssasService,
     ) { }
 
     private async getCompanyByUserId(userId: number) {
@@ -40,6 +47,14 @@ export class ClientesFornecedoresService {
         return user.company;
     }
 
+    async createUserAssas(companyId: number, clienteAssasPayload: CreateClienteDto) {
+        const assasApiToken = await this.companyService.getApiTokenByCompanyId(companyId);
+        if (assasApiToken) {
+            const clientAssas = await this.clienteAssasService.create(assasApiToken, clienteAssasPayload)
+            return clientAssas
+        }
+    }
+
     async create(userId: number, dto: CreateClienteFornecedorDto) {
         const company = await this.getCompanyByUserId(userId);
 
@@ -52,6 +67,18 @@ export class ClientesFornecedoresService {
 
         if (exists) {
             throw new BadRequestException('Já existe um cadastro com este CPF/CNPJ.');
+        }
+        if (!dto.documento) {
+            throw new BadRequestException("CPF ou CNPJ deve ser enviado")
+        }
+        const clienteAssasPayload: CreateClienteDto = {
+            name: dto.nome!,
+            cpfCnpj: dto.documento!,
+            email: dto.email!
+        }
+        const userAssas = await this.createUserAssas(company.id, clienteAssasPayload)
+        if (userAssas && userAssas.id) {
+            dto.asaasCustomerId = userAssas.id
         }
 
         const item = this.repo.create({
