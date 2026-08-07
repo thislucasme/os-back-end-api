@@ -76,7 +76,7 @@ export class CreateClienteFornecedorDto {
   @MaxLength(255)
   endereco?: string;
 
-    @ApiPropertyOptional({
+  @ApiPropertyOptional({
     example: 'cus_000008587289',
   })
   @IsOptional()

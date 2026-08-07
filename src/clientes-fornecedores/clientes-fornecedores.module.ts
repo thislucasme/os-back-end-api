@@ -18,5 +18,6 @@ import { ClientesAssasModule } from 'src/assas/clientes/clientes-assas.module';
         ClientesFornecedoresController,],
     providers: [
         ClientesFornecedoresService,],
+        exports:[ClientesFornecedoresService]
 })
 export class ClientesFornecedoresModule { }

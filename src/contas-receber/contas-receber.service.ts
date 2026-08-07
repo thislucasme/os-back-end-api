@@ -23,6 +23,9 @@ import { OrigemMovimentacaoFinanceira } from 'src/movimentacoes/entities/movimen
 import { OrdemServico } from 'src/ordens-servico/entities/ordem-servico.entity';
 import { Company } from 'src/companies/ company.entity';
 import { UsersService } from 'src/users/users.service';
+import { AssasCobrancasService } from 'src/assas/cobrancas/assas-cobrancas.service';
+import { CompaniesService } from 'src/companies/companies.service';
+import { ClientesFornecedoresService } from 'src/clientes-fornecedores/clientes-fornecedores.service';
 
 @Injectable()
 export class ContasReceberService {
@@ -50,6 +53,12 @@ export class ContasReceberService {
     private readonly userService: UsersService,
 
     private readonly movimentacoesService: MovimentacoesService,
+
+    private readonly assasCobrancaService: AssasCobrancasService,
+
+    private readonly companyService: CompaniesService,
+
+    private readonly clienteFornecedorService: ClientesFornecedoresService,
   ) { }
   public async getCompanyIdFromRequestUser(
     requestUser: any,
@@ -209,7 +218,6 @@ export class ContasReceberService {
 
     const parcelasCriadas: ContaReceberParcela[] = [];
 
-
     for (
       let i = 1;
       i <= parcelas;
@@ -218,7 +226,6 @@ export class ContasReceberService {
 
       const data =
         new Date(dto.primeiroVencimento);
-
 
       data.setMonth(
         data.getMonth() + i - 1
@@ -236,26 +243,66 @@ export class ContasReceberService {
           valor: valorParcela,
 
           vencimento:
-            data.toISOString()
-              .slice(0, 10),
+            data.toISOString().slice(0, 10),
 
           paga: false
 
         });
 
 
-      parcelasCriadas.push(
-        parcela
-      );
+      parcelasCriadas.push(parcela);
+    }
+    const assasApiToken = await this.companyService.getApiTokenByCompanyId(companyId);
+    const clienteFornecedor = await this.clienteFornecedorService.findOneClienteFornecedorById(dto.clienteId)
+    console.log("assas api token", assasApiToken)
+    console.log("cliente fornecedor", clienteFornecedor)
 
+    const parcelasSalvas =
+      await this.parcelasRepository.save(parcelasCriadas);
+
+    if (clienteFornecedor.asaasCustomerId) {
+      for (const parcela of parcelasSalvas) {
+
+        const payment =
+          await this.assasCobrancaService.createPayment(
+            assasApiToken,
+            {
+              customer: clienteFornecedor.asaasCustomerId,
+
+              billingType: 'BOLETO',
+
+              value: parcela.valor,
+
+              dueDate: parcela.vencimento,
+
+              description:
+                `${conta.descricao} - Parcela ${parcela.numero}/${parcelas}`,
+
+              externalReference:
+                `conta-${conta.id}-parcela-${parcela.numero}`,
+
+              interest: {
+                value: 1
+              },
+
+              fine: {
+                value: 10,
+                type: 'FIXED'
+              }
+            }
+          );
+
+
+        parcela.asaasPaymentId = payment.id;
+
+        parcela.boletoUrl =
+          payment.bankSlipUrl;
+
+      }
     }
 
 
-    await this.parcelasRepository.save(
-      parcelasCriadas
-    );
-
-
+    await this.parcelasRepository.save(parcelasSalvas);
 
     return this.repository.findOne({
 

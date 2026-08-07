@@ -8,7 +8,7 @@ import { UpdatePaymentDto } from './dtos/update-payment.dto';
 
 @Injectable()
 export class AssasCobrancasService {
-  constructor(private readonly httpService: HttpService) {}
+  constructor(private readonly httpService: HttpService) { }
 
   private getHeaders(token: string) {
     return {
@@ -17,6 +17,27 @@ export class AssasCobrancasService {
       'access_token': token,
       'content-type': 'application/json',
     };
+  }
+
+  async createInstallmentPayment(
+    token: string,
+    data: CreatePaymentDto,
+  ): Promise<PaymentResponseDto> {
+    try {
+      const response = await firstValueFrom(
+        this.httpService.post<PaymentResponseDto>(
+          `${ASAAS_API_URL}/payments`,
+          data,
+          {
+            headers: this.getHeaders(token),
+          },
+        ),
+      );
+
+      return response.data;
+    } catch (error) {
+      this.handleError(error);
+    }
   }
 
   async createPayment(token: string, data: CreatePaymentDto): Promise<PaymentResponseDto> {

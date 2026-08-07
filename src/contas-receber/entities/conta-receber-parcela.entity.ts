@@ -23,21 +23,21 @@ export class ContaReceberParcela {
 
 
   @Column({
-    name:'conta_receber_id'
+    name: 'conta_receber_id'
   })
   contaReceberId!: number;
 
 
 
   @ManyToOne(
-    ()=>ContaReceber,
-    conta=>conta.parcelas,
+    () => ContaReceber,
+    conta => conta.parcelas,
     {
-      onDelete:'CASCADE'
+      onDelete: 'CASCADE'
     }
   )
   @JoinColumn({
-    name:'conta_receber_id'
+    name: 'conta_receber_id'
   })
   contaReceber!: ContaReceber;
 
@@ -51,9 +51,9 @@ export class ContaReceberParcela {
 
 
   @Column({
-    type:'decimal',
-    precision:15,
-    scale:2
+    type: 'decimal',
+    precision: 15,
+    scale: 2
   })
   valor!: number;
 
@@ -61,7 +61,7 @@ export class ContaReceberParcela {
 
 
   @Column({
-    type:'date'
+    type: 'date'
   })
   vencimento!: string;
 
@@ -69,7 +69,7 @@ export class ContaReceberParcela {
 
 
   @Column({
-    default:false
+    default: false
   })
   paga!: boolean;
 
@@ -77,8 +77,8 @@ export class ContaReceberParcela {
 
 
   @OneToMany(
-    ()=>Recebimento,
-    recebimento=>recebimento.parcela
+    () => Recebimento,
+    recebimento => recebimento.parcela
   )
   recebimentos!: Recebimento[];
 
@@ -86,9 +86,23 @@ export class ContaReceberParcela {
 
 
   @CreateDateColumn({
-    name:'created_at'
+    name: 'created_at'
   })
   createdAt!: Date;
 
+  @Column({
+    name: 'asaas_payment_id',
+    type: 'varchar',
+    length: 255,
+    nullable: true,
+  })
+  asaasPaymentId?: string | null;
+
+  @Column({
+    name: 'boleto_url',
+    type: 'text',
+    nullable: true,
+  })
+  boletoUrl?: string | null;
 
 }

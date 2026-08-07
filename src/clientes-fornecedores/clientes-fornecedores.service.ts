@@ -141,12 +141,28 @@ export class ClientesFornecedoresService {
     }
 
     async findOne(userId: number, id: number) {
+        console.log(userId, id)
         const company = await this.getCompanyByUserId(userId);
 
         const item = await this.repo.findOne({
             where: {
                 id,
                 companyId: company.id,
+            },
+        });
+
+        if (!item) {
+            throw new NotFoundException('Cadastro não encontrado.');
+        }
+
+        return item;
+    }
+
+        async findOneClienteFornecedorById(userId: number) {
+  
+        const item = await this.repo.findOne({
+            where: {
+                id: userId,
             },
         });
 

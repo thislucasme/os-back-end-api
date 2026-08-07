@@ -11,11 +11,16 @@ import { ContaReceberParcela } from './entities/conta-receber-parcela.entity';
 import { OrdemServico } from 'src/ordens-servico/entities/ordem-servico.entity';
 import { Company } from 'src/companies/ company.entity';
 import { UsersModule } from 'src/users/users.module';
+import { AssasCobrancasModule } from 'src/assas/cobrancas/assas-cobrancas.module';
+import { CompaniesModule } from 'src/companies/companies.module';
+import { ClientesFornecedoresModule } from 'src/clientes-fornecedores/clientes-fornecedores.module';
 
 @Module({
   imports: [
+    CompaniesModule,
+    ClientesFornecedoresModule,
     TypeOrmModule.forFeature([
- ContaReceber,
+      ContaReceber,
       Recebimento,
       ContaFinanceira,
       User,
@@ -24,7 +29,8 @@ import { UsersModule } from 'src/users/users.module';
       Company
     ]),
     MovimentacoesModule,
-    UsersModule
+    UsersModule,
+    AssasCobrancasModule
   ],
   controllers: [
     ContasReceberController,
@@ -33,4 +39,4 @@ import { UsersModule } from 'src/users/users.module';
     ContasReceberService,
   ],
 })
-export class ContasReceberModule {}
+export class ContasReceberModule { }

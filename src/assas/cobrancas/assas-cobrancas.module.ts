@@ -10,5 +10,6 @@ import { HttpModule } from '@nestjs/axios';
         AssasCobrancasController,],
     providers: [
         AssasCobrancasService,],
+        exports:[AssasCobrancasService]
 })
 export class AssasCobrancasModule { }
