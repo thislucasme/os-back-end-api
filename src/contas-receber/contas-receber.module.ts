@@ -38,5 +38,6 @@ import { ClientesFornecedoresModule } from 'src/clientes-fornecedores/clientes-f
   providers: [
     ContasReceberService,
   ],
+  exports:[ContasReceberService]
 })
 export class ContasReceberModule { }

@@ -20,6 +20,7 @@ import { ItensOsService } from './itens-os.service';
 import { ProdutoServico } from 'src/produtos-servicos/entities/produto-servico.entity';
 import { ItemOsResponsavel } from './entities/item-os-responsavel.entity';
 import { DespesasModule } from 'src/despesas/despesas.module';
+import { OrderServiceResponsibleExpense } from './entities/order-service-responsible-expense.entity';
 @Module({
   imports: [
       forwardRef(() => DespesasModule),
@@ -35,7 +36,8 @@ import { DespesasModule } from 'src/despesas/despesas.module';
       User,
       ItemOs, 
       ProdutoServico,
-      ItemOsResponsavel
+      ItemOsResponsavel,
+OrderServiceResponsibleExpense
     ]),
 
     MulterModule.register({

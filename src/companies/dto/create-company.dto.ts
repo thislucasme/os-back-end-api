@@ -14,4 +14,5 @@ export class CreateCompanyDto {
   observations?: string;
   logoUrl?: string;
    apiToken?: string;
+   webHookToken?:string;
 }

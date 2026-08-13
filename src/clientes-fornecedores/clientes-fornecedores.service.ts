@@ -158,8 +158,8 @@ export class ClientesFornecedoresService {
         return item;
     }
 
-        async findOneClienteFornecedorById(userId: number) {
-  
+    async findOneClienteFornecedorById(userId: number) {
+
         const item = await this.repo.findOne({
             where: {
                 id: userId,

@@ -1,9 +1,13 @@
+
 import { ClienteFornecedor } from 'src/clientes-fornecedores/entities/cliente-fornecedor.entity';
+import { Certificate } from 'src/fiscal/certificado/entities/certificado.entity';
+import { CompanyFiscalService } from 'src/fiscal/company-service.entity';
 import { User } from 'src/users/user.entity';
 import {
   Column,
   Entity,
   OneToMany,
+  OneToOne,
   PrimaryGeneratedColumn
 } from 'typeorm';
 
@@ -11,6 +15,9 @@ import {
 export class Company {
   @PrimaryGeneratedColumn()
   id!: number;
+
+  @Column({ type: 'uuid', unique: true, nullable: true })
+  uid!: string;
 
   @OneToMany(() => User, (user) => user.company)
   users!: User[];
@@ -63,9 +70,18 @@ export class Company {
   @Column({ nullable: true })
   logoUrl!: string;
 
-  @Column({ 
+@OneToOne(() => Certificate, (certificate) => certificate.company)
+  certificate!: Certificate;
+
+  @Column({
     type: 'text',
     nullable: true,
   })
   apiToken?: string;
+
+  @Column({
+    type: 'text',
+    nullable: true,
+  })
+  webHookToken?: string;
 }

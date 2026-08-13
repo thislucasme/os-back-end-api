@@ -1,3 +1,9 @@
+import { CommonModule } from './common/common.module';
+import { CertificadoModule } from './fiscal/certificado/certificado.module';
+import { CompanyFiscalModule } from './fiscal/company-fiscal.module';
+import { AssasFiscalModule } from './assas/fiscal/assas-fiscal.module';
+import { NbsModule } from './nbs/nbs.module';
+import { WebhookModule } from './assas/webhook/webhook.module';
 import { CryptoModule } from './assas/cypto/crypto.module';
 import { AssasCobrancasModule } from './assas/cobrancas/assas-cobrancas.module';
 import { ClientesAssasModule } from './assas/clientes/clientes-assas.module';
@@ -28,6 +34,12 @@ import { FolhaPagamentoModule } from './folha-pagamento/folha-pagamento.module';
 
 @Module({
   imports: [
+    CommonModule,
+    CertificadoModule,
+    CompanyFiscalModule,
+    AssasFiscalModule,
+    NbsModule,
+    WebhookModule,
     CryptoModule,
     AssasCobrancasModule,
     ClientesAssasModule,

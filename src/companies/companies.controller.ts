@@ -33,7 +33,7 @@ export class CompaniesController {
 
   @Get('profile')
   getProfile(@Request() req) {
-    return this.companiesService.getProfile(req.user.id);
+    return this.companiesService.getProfileFrontEnd(req.user.id);
   }
 
   @Patch('profile')

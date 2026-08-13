@@ -1,11 +1,12 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { In, Repository } from 'typeorm';
 import { OrderServiceResponsibleExpense } from './entities/order-service-responsible-expense.entity';
 import { OrderServiceResponsible } from './entities/order-service-responsible.entity';
 import { CreateOrderServiceResponsibleExpenseDto } from './dto/expense/create-order-service-responsible-expense.dto';
 import { ListOrderServiceResponsibleExpenseDto } from './dto/responsible/list-order-service-responsible-expense.dto';
 import { UpdateOrderServiceResponsibleExpenseDto } from './dto/expense/update-order-service-responsible-expense.dto';
+import { ItemOsLiberacao } from './entities/item-os.entity';
 
 @Injectable()
 export class OrderServiceResponsibleExpenseService {
@@ -14,7 +15,66 @@ export class OrderServiceResponsibleExpenseService {
     private readonly expenseRepo: Repository<OrderServiceResponsibleExpense>,
     @InjectRepository(OrderServiceResponsible)
     private readonly responsibleRepo: Repository<OrderServiceResponsible>,
-  ) {}
+  ) { }
+
+  async marcarLiberacaoNaConclusao(ordemServicoId: number): Promise<void> {
+    const responsibles = await this.responsibleRepo.find({
+      where: {
+        orderServiceId: ordemServicoId,
+      },
+      select: {
+        id: true,
+      },
+    });
+
+    const responsibleIds = responsibles.map((responsible) => responsible.id);
+
+    if (!responsibleIds.length) {
+      return;
+    }
+
+    await this.expenseRepo.update(
+      {
+        orderServiceResponsibleId: In(responsibleIds),
+        liberacao: ItemOsLiberacao.NA_CONCLUSAO_OS,
+      },
+      {
+        data_liberacao: new Date(),
+      },
+    );
+  }
+  async atualizarLiberacaoDespesas(
+    ordemServicoId: number,
+    liberacao: ItemOsLiberacao,
+    dataLiberacao: Date,
+  ): Promise<void> {
+    const responsaveis = await this.responsibleRepo.find({
+      where: {
+        orderServiceId: ordemServicoId,
+      },
+      select: {
+        id: true,
+      },
+    });
+
+    if (!responsaveis.length) {
+      return;
+    }
+
+    const responsibleIds = responsaveis.map(
+      (responsavel) => responsavel.id,
+    );
+
+    await this.expenseRepo.update(
+      {
+        orderServiceResponsibleId: In(responsibleIds),
+      },
+      {
+        liberacao,
+        data_liberacao: dataLiberacao,
+      },
+    );
+  }
 
   async create(orderServiceId: number, responsibleId: number, dto: CreateOrderServiceResponsibleExpenseDto) {
     const responsible = await this.responsibleRepo.findOne({
@@ -30,6 +90,8 @@ export class OrderServiceResponsibleExpenseService {
       amount: dto.amount,
       description: dto.description,
       assignToOrderService: dto.assignToOrderService,
+      liberacao: ItemOsLiberacao.NA_CONCLUSAO_OS
+
     });
 
     const saved = await this.expenseRepo.save(expense);
@@ -89,6 +151,7 @@ export class OrderServiceResponsibleExpenseService {
   async update(orderServiceId: number, responsibleId: number, expenseId: number, dto: UpdateOrderServiceResponsibleExpenseDto) {
     const expense = await this.findOne(orderServiceId, responsibleId, expenseId);
     Object.assign(expense, dto);
+    expense.liberacao = ItemOsLiberacao.NA_CONCLUSAO_OS;
     await this.expenseRepo.save(expense);
     return { id: expense.id };
   }
@@ -100,36 +163,36 @@ export class OrderServiceResponsibleExpenseService {
 
   // order-service-responsible-expense.service.ts
 
-async findAllByOrderService(
-  orderServiceId: number,
-  query: ListOrderServiceResponsibleExpenseDto,
-) {
-  const { page = 1, limit = 10, assignToOrderService } = query;
-  const skip = (page - 1) * limit;
+  async findAllByOrderService(
+    orderServiceId: number,
+    query: ListOrderServiceResponsibleExpenseDto,
+  ) {
+    const { page = 1, limit = 10, assignToOrderService } = query;
+    const skip = (page - 1) * limit;
 
-  const qb = this.expenseRepo
-    .createQueryBuilder('e')
-    .innerJoin('e.responsible', 'r')  
-    .where('r.orderServiceId = :orderServiceId', { orderServiceId });
+    const qb = this.expenseRepo
+      .createQueryBuilder('e')
+      .innerJoin('e.responsible', 'r')
+      .where('r.orderServiceId = :orderServiceId', { orderServiceId });
 
-  if (assignToOrderService !== undefined) {
-    qb.andWhere('e.assignToOrderService = :assignToOrderService', {
-      assignToOrderService,
-    });
+    if (assignToOrderService !== undefined) {
+      qb.andWhere('e.assignToOrderService = :assignToOrderService', {
+        assignToOrderService,
+      });
+    }
+
+    const [data, total] = await qb
+      .skip(skip)
+      .take(limit)
+      .orderBy('e.createdAt', 'DESC')
+      .getManyAndCount();
+
+    return {
+      data,
+      total,
+      page,
+      limit,
+      totalPages: Math.ceil(total / limit),
+    };
   }
-
-  const [data, total] = await qb
-    .skip(skip)
-    .take(limit)
-    .orderBy('e.createdAt', 'DESC')
-    .getManyAndCount();
-
-  return {
-    data,
-    total,
-    page,
-    limit,
-    totalPages: Math.ceil(total / limit),
-  };
-}
 }

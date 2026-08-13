@@ -16,6 +16,7 @@ import { Company } from 'src/companies/ company.entity';
 import { Proposta } from './proposta.entity';
 import { OrdemServicoItem } from './ordem-servico-item.entity';
 import { OrdemServicoAnexo } from './ordem-servico-anexo.entity';
+import { OrderServiceResponsible } from './order-service-responsible.entity';
 
 export enum OrdemServicoStatus {
   RECEBIDO = 'Recebido',
@@ -127,6 +128,15 @@ export class OrdemServico {
   })
   anexos!: OrdemServicoAnexo[];
 
+  @OneToMany(
+    () => OrderServiceResponsible,
+    (responsible) => responsible.orderService,
+    {
+      cascade: true,
+    },
+  )
+  responsibles!: OrderServiceResponsible[];
+
   @OneToMany(() => Proposta, (proposta) => proposta.ordemServico)
   propostas!: Proposta[];
 
@@ -141,4 +151,10 @@ export class OrdemServico {
 
   @Column({ nullable: true })
   contaSaidaId?: number;
+
+  @Column({ default: false })
+  concluido!: boolean;
+
+  @Column({ type: 'date', nullable: true })
+  dataConclusao!: string | null;
 }

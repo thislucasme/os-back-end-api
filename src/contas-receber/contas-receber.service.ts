@@ -2,6 +2,7 @@ import {
   BadRequestException,
   ForbiddenException,
   Injectable,
+  Logger,
   NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -16,6 +17,7 @@ import { ContaReceberParcela } from './entities/conta-receber-parcela.entity';
 
 import {
   ContaReceber,
+  PaymentMethod,
   StatusContaReceber,
 } from './entities/conta-receber.entity';
 import { Recebimento } from './entities/recebimento.entity';
@@ -29,6 +31,7 @@ import { ClientesFornecedoresService } from 'src/clientes-fornecedores/clientes-
 
 @Injectable()
 export class ContasReceberService {
+  private readonly logger = new Logger(ContasReceberService.name);
   constructor(
     @InjectRepository(ContaReceber)
     private readonly repository: Repository<ContaReceber>,
@@ -181,6 +184,9 @@ export class ContasReceberService {
         valorOriginal:
           dto.valorOriginal,
 
+        paymentMethod:
+          dto.paymentMethod,
+
         valorRecebido: 0,
 
         dataVencimento:
@@ -254,52 +260,53 @@ export class ContasReceberService {
     }
     const assasApiToken = await this.companyService.getApiTokenByCompanyId(companyId);
     const clienteFornecedor = await this.clienteFornecedorService.findOneClienteFornecedorById(dto.clienteId)
-    console.log("assas api token", assasApiToken)
-    console.log("cliente fornecedor", clienteFornecedor)
 
     const parcelasSalvas =
       await this.parcelasRepository.save(parcelasCriadas);
+    if (dto.paymentMethod === PaymentMethod.BOLETO && assasApiToken) {
+      if (clienteFornecedor.asaasCustomerId) {
+        for (const parcela of parcelasSalvas) {
 
-    if (clienteFornecedor.asaasCustomerId) {
-      for (const parcela of parcelasSalvas) {
+          const payment =
+            await this.assasCobrancaService.createPayment(
+              assasApiToken,
+              {
+                customer: clienteFornecedor.asaasCustomerId,
 
-        const payment =
-          await this.assasCobrancaService.createPayment(
-            assasApiToken,
-            {
-              customer: clienteFornecedor.asaasCustomerId,
+                billingType: 'BOLETO',
 
-              billingType: 'BOLETO',
+                value: parcela.valor,
 
-              value: parcela.valor,
+                dueDate: parcela.vencimento,
 
-              dueDate: parcela.vencimento,
+                description:
+                  `${conta.descricao} - Parcela ${parcela.numero}/${parcelas}`,
 
-              description:
-                `${conta.descricao} - Parcela ${parcela.numero}/${parcelas}`,
+                externalReference:
+                  `conta-${conta.id}-parcela-${parcela.numero}`,
 
-              externalReference:
-                `conta-${conta.id}-parcela-${parcela.numero}`,
+                interest: {
+                  value: 1
+                },
 
-              interest: {
-                value: 1
-              },
-
-              fine: {
-                value: 10,
-                type: 'FIXED'
+                fine: {
+                  value: 10,
+                  type: 'FIXED'
+                }
               }
-            }
-          );
+            );
 
 
-        parcela.asaasPaymentId = payment.id;
+          parcela.asaasPaymentId = payment.id;
 
-        parcela.boletoUrl =
-          payment.bankSlipUrl;
+          parcela.boletoUrl =
+            payment.bankSlipUrl;
 
+        }
       }
     }
+
+
 
 
     await this.parcelasRepository.save(parcelasSalvas);
@@ -413,7 +420,7 @@ export class ContasReceberService {
         take: limit,
 
         order: {
-          dataVencimento: 'ASC',
+          createdAt: 'DESC',
           id: 'DESC',
         },
 
@@ -551,6 +558,11 @@ export class ContasReceberService {
           ? dto.contaFinanceiraId
           : conta.contaFinanceiraId,
 
+      paymentMethod:
+        dto.paymentMethod !== undefined
+          ? dto.paymentMethod
+          : conta.paymentMethod,
+
     });
 
 
@@ -567,6 +579,7 @@ export class ContasReceberService {
         );
 
     }
+    console.log(dto.paymentMethod)
 
 
 
@@ -870,6 +883,129 @@ export class ContasReceberService {
       },
     );
 
+  }
+
+  async receberParcelaPorAsaasId(
+    companyId: number,
+    asaasPaymentId: string,
+    valorRecebido: number,
+    dataPagamento?: string,
+  ) {
+    return this.repository.manager.transaction(
+      async manager => {
+        const parcelasRepository = manager.getRepository(ContaReceberParcela);
+        const recebimentosRepository = manager.getRepository(Recebimento);
+        const contasFinanceirasRepository = manager.getRepository(ContaFinanceira);
+
+        // 1. Busca a parcela pelo asaasPaymentId (ao invés de parcelaId por parâmetro)
+        const parcela = await parcelasRepository.findOne({
+          where: { asaasPaymentId },
+          relations: {
+            contaReceber: true,
+          },
+        });
+
+        if (!parcela) {
+          this.logger.warn(`Parcela não encontrada para o asaasPaymentId: ${asaasPaymentId}`);
+          throw new NotFoundException('Parcela não encontrada para este pagamento do Asaas.');
+        }
+
+        // Validação de segurança da empresa
+        if (parcela.contaReceber.companyId !== companyId) {
+          throw new ForbiddenException('Sem permissão.');
+        }
+
+        // Se já estiver paga, podemos ignorar ou retornar a parcela para evitar erro duplo no webhook
+        if (parcela.paga) {
+          this.logger.log(`Parcela do pagamento ${asaasPaymentId} já consta como paga.`);
+          return parcela;
+        }
+        console.log("VALOR RECEBIDO:", valorRecebido)
+        const valor = Number(valorRecebido);
+        if (valor <= 0) {
+          throw new BadRequestException('Valor inválido no recebimento do Asaas.');
+        }
+
+        // Pega a conta financeira padrão da conta a receber
+        const contaFinanceiraId = parcela.contaReceber.contaFinanceiraId;
+
+        if (!contaFinanceiraId) {
+          throw new BadRequestException('A conta a receber não possui uma conta financeira vinculada para receber o valor do Asaas.');
+        }
+
+        const contaFinanceira = await contasFinanceirasRepository.findOne({
+          where: {
+            id: contaFinanceiraId,
+            companyId,
+          },
+        });
+
+        if (!contaFinanceira) {
+          throw new BadRequestException('Conta financeira não encontrada para creditar o valor.');
+        }
+
+        // 2. Atualiza saldo da conta financeira
+        contaFinanceira.saldoAtual = this.roundMoney(
+          Number(contaFinanceira.saldoAtual || 0) + valor,
+        );
+
+        await contasFinanceirasRepository.save(contaFinanceira);
+
+        // 3. Cria o registro de recebimento
+        const recebimento = recebimentosRepository.create({
+          companyId,
+          parcelaId: parcela.id,
+          contaFinanceiraId,
+          valor,
+          dataRecebimento: dataPagamento ?? this.today(),
+          formaPagamento: 'BOLETO', // ou capturado do payload se preferir
+          observacao: `Recebimento automático via Asaas (Payment ID: ${asaasPaymentId})`,
+        });
+
+        const recebimentoSalvo = await recebimentosRepository.save(recebimento);
+
+        // 4. Marca parcela como paga
+        parcela.paga = true;
+        await parcelasRepository.save(parcela);
+
+        // 5. Atualiza conta principal
+        const conta = parcela.contaReceber;
+        conta.valorRecebido = this.roundMoney(
+          Number(conta.valorRecebido || 0) + valor,
+        );
+
+        conta.status = this.definirStatusPeloRecebimento(
+          Number(conta.valorOriginal),
+          Number(conta.valorRecebido),
+        );
+
+        await manager.save(conta);
+
+        // 6. REGISTRA MOVIMENTAÇÃO FINANCEIRA
+        await this.movimentacoesService.registrarEntrada(
+          {
+            companyId,
+            contaFinanceiraId,
+            valor,
+            origem: OrigemMovimentacaoFinanceira.CONTA_RECEBER,
+            referenciaId: recebimentoSalvo.id,
+            descricao: `Recebimento Asaas da parcela #${parcela.id} da conta #${conta.id}`,
+            dataMovimentacao: dataPagamento ?? this.today(),
+          },
+          manager,
+        );
+
+        this.logger.log(`Parcela #${parcela.id} baixada com sucesso via Webhook do Asaas.`);
+
+        return parcelasRepository.findOne({
+          where: { id: parcela.id },
+          relations: {
+            recebimentos: true,
+            contaReceber: true,
+          },
+        });
+      },
+    );
   }
 
   async remove(

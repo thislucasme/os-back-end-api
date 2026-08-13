@@ -2,12 +2,19 @@ import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
 import {
   IsDateString,
+  IsEnum,
   IsNumber,
   IsOptional,
   IsString,
   Min,
 } from 'class-validator';
-
+export enum PaymentMethod {
+  PIX = 'PIX',
+  CREDIT_CARD = 'CREDIT_CARD',
+  DEBIT_CARD = 'DEBIT_CARD',
+  BOLETO = 'BOLETO',
+  CASH = 'CASH',
+}
 
 export class CreateContaReceberDto {
 
@@ -22,8 +29,14 @@ export class CreateContaReceberDto {
   @Min(1)
   clienteId!: number;
 
-  
 
+  @ApiProperty({
+    example: PaymentMethod.DEBIT_CARD,
+    description: 'Método de pagamento da conta.',
+    enum: PaymentMethod,
+  })
+  @IsEnum(PaymentMethod)
+  paymentMethod!: PaymentMethod;
 
 
   @ApiPropertyOptional({
@@ -75,7 +88,7 @@ export class CreateContaReceberDto {
 
 
   @ApiProperty({
-    example:'2026-08-10',
+    example: '2026-08-10',
     description:
       'Data do primeiro vencimento.',
   })
@@ -85,7 +98,7 @@ export class CreateContaReceberDto {
 
 
   @ApiPropertyOptional({
-    example:'2026-07-15',
+    example: '2026-07-15',
     description:
       'Data de emissão.',
   })
@@ -96,7 +109,7 @@ export class CreateContaReceberDto {
 
 
   @ApiPropertyOptional({
-    example:1,
+    example: 1,
     description:
       'Conta financeira padrão.',
   })

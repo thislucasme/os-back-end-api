@@ -24,6 +24,13 @@ export enum StatusContaReceber {
   CANCELADA = 'CANCELADA',
 }
 
+export enum PaymentMethod {
+  PIX = 'PIX',
+  CREDIT_CARD = 'CREDIT_CARD',
+  DEBIT_CARD = 'DEBIT_CARD',
+  BOLETO = 'BOLETO',
+  CASH = 'CASH',
+}
 
 
 const decimalTransformer: ValueTransformer = {
@@ -32,7 +39,7 @@ const decimalTransformer: ValueTransformer = {
 
   from: (value?: string | number | null) => {
 
-    if(value === null || value === undefined){
+    if (value === null || value === undefined) {
       return 0;
     }
 
@@ -53,7 +60,7 @@ export class ContaReceber {
 
 
   @Column({
-    name:'company_id'
+    name: 'company_id'
   })
   companyId!: number;
 
@@ -63,21 +70,21 @@ export class ContaReceber {
    * CLIENTE
    */
   @Column({
-    name:'cliente_id'
+    name: 'cliente_id'
   })
   clienteId!: number;
 
 
 
   @ManyToOne(
-    ()=>ClienteFornecedor,
+    () => ClienteFornecedor,
     {
-      nullable:false,
-      onDelete:'RESTRICT'
+      nullable: false,
+      onDelete: 'RESTRICT'
     }
   )
   @JoinColumn({
-    name:'cliente_id'
+    name: 'cliente_id'
   })
   cliente!: ClienteFornecedor;
 
@@ -88,22 +95,22 @@ export class ContaReceber {
    * OS OPCIONAL
    */
   @Column({
-    name:'ordem_servico_id',
-    nullable:true
+    name: 'ordem_servico_id',
+    nullable: true
   })
   ordemServicoId?: number | null;
 
 
 
   @ManyToOne(
-    ()=>OrdemServico,
+    () => OrdemServico,
     {
-      nullable:true,
-      onDelete:'SET NULL'
+      nullable: true,
+      onDelete: 'SET NULL'
     }
   )
   @JoinColumn({
-    name:'ordem_servico_id'
+    name: 'ordem_servico_id'
   })
   ordemServico?: OrdemServico | null;
 
@@ -114,22 +121,22 @@ export class ContaReceber {
    * CONTA FINANCEIRA PADRÃO
    */
   @Column({
-    name:'conta_financeira_id',
-    nullable:true
+    name: 'conta_financeira_id',
+    nullable: true
   })
   contaFinanceiraId?: number | null;
 
 
 
   @ManyToOne(
-    ()=>ContaFinanceira,
+    () => ContaFinanceira,
     {
-      nullable:true,
-      onDelete:'SET NULL'
+      nullable: true,
+      onDelete: 'SET NULL'
     }
   )
   @JoinColumn({
-    name:'conta_financeira_id'
+    name: 'conta_financeira_id'
   })
   contaFinanceira?: ContaFinanceira | null;
 
@@ -137,9 +144,9 @@ export class ContaReceber {
 
 
   @Column({
-    type:'varchar',
-    length:255,
-    nullable:true
+    type: 'varchar',
+    length: 255,
+    nullable: true
   })
   descricao?: string | null;
 
@@ -147,10 +154,10 @@ export class ContaReceber {
 
 
   @Column({
-    type:'decimal',
-    precision:15,
-    scale:2,
-    transformer:decimalTransformer
+    type: 'decimal',
+    precision: 15,
+    scale: 2,
+    transformer: decimalTransformer
   })
   valorOriginal!: number;
 
@@ -158,11 +165,11 @@ export class ContaReceber {
 
 
   @Column({
-    type:'decimal',
-    precision:15,
-    scale:2,
-    default:0,
-    transformer:decimalTransformer
+    type: 'decimal',
+    precision: 15,
+    scale: 2,
+    default: 0,
+    transformer: decimalTransformer
   })
   valorRecebido!: number;
 
@@ -170,7 +177,7 @@ export class ContaReceber {
 
 
   @Column({
-    type:'date'
+    type: 'date'
   })
   dataVencimento!: string;
 
@@ -178,8 +185,8 @@ export class ContaReceber {
 
 
   @Column({
-    type:'date',
-    nullable:true
+    type: 'date',
+    nullable: true
   })
   dataEmissao?: string | null;
 
@@ -187,11 +194,18 @@ export class ContaReceber {
 
 
   @Column({
-    type:'enum',
-    enum:StatusContaReceber,
-    default:StatusContaReceber.ABERTA
+    type: 'enum',
+    enum: StatusContaReceber,
+    default: StatusContaReceber.ABERTA
   })
   status!: StatusContaReceber;
+
+  @Column({
+    type: 'enum',
+    enum: PaymentMethod,
+    default: null
+  })
+  paymentMethod!: PaymentMethod;
 
 
 
@@ -200,10 +214,10 @@ export class ContaReceber {
    * PARCELAS
    */
   @OneToMany(
-    ()=>ContaReceberParcela,
-    parcela=>parcela.contaReceber,
+    () => ContaReceberParcela,
+    parcela => parcela.contaReceber,
     {
-      cascade:true
+      cascade: true
     }
   )
   parcelas!: ContaReceberParcela[];
@@ -213,14 +227,14 @@ export class ContaReceber {
 
 
   @CreateDateColumn({
-    name:'created_at'
+    name: 'created_at'
   })
   createdAt!: Date;
 
 
 
   @UpdateDateColumn({
-    name:'updated_at'
+    name: 'updated_at'
   })
   updatedAt!: Date;
 

@@ -40,6 +40,7 @@ import { CreateDespesaDto } from 'src/despesas/dto/create-despesa.dto';
 import { OrdemServicoItem } from './entities/ordem-servico-item.entity';
 import { ItensOsService } from './itens-os.service';
 import { ItemOsLiberacao } from './entities/item-os.entity';
+import { OrderServiceResponsibleExpense } from './entities/order-service-responsible-expense.entity';
 
 @Injectable()
 export class OrdensServicoService {
@@ -58,6 +59,9 @@ export class OrdensServicoService {
 
     @InjectRepository(User)
     private readonly usersRepo: Repository<User>,
+
+    @InjectRepository(OrderServiceResponsibleExpense)
+    private readonly orderServiceResponsibleExpense: OrderServiceResponsibleExpense,
 
     private readonly orderServiceResponsibleExpenseService: OrderServiceResponsibleExpenseService,
     private readonly itensOsService: ItensOsService,
@@ -144,23 +148,36 @@ export class OrdensServicoService {
     const companyId =
       await this.getCompanyId(userId);
 
-    return this.osRepo.find({
-      where: {
-        companyId,
+  const orders = await this.osRepo.find({
+    where: {
+      companyId,
+    },
+    relations: {
+      cliente: true,
+      responsavel: true,
+      itens: {
+        produtoServico: true,
       },
-      relations: {
-        cliente: true,
-        responsavel: true,
-        itens: {
-          produtoServico: true,
-        },
-        anexos: true,
-        propostas: true,
+      anexos: true,
+      propostas: true,
+      responsibles: {
+        employee: true,
       },
-      order: {
-        id: 'DESC',
-      },
-    });
+    },
+    order: {
+      id: 'DESC',
+    },
+  });
+
+  return orders.map((order) => ({
+    ...order,
+    employees: order.responsibles.map((responsible) => ({
+      id: responsible.employee.id,
+      name: responsible.employee.name,
+      active: responsible.employee.active,
+    })),
+    responsibles: undefined,
+  }));
   }
 
   // =========================================================
@@ -599,6 +616,31 @@ export class OrdensServicoService {
 
       await this.despesasService.create({ id: userId }, createDto);
     }
+
+    const despesasParaAtualizar = despesas.data.filter(
+      item => item.liberacao === ItemOsLiberacao.NA_CONCLUSAO_OS
+    );
+
+    if (despesasParaAtualizar.length > 0) {
+      for (const item of despesasParaAtualizar) {
+        item.data_liberacao = new Date();
+      }
+      // Salva todos de uma vez
+      await this.orderServiceResponsibleExpenseService.marcarLiberacaoNaConclusao(id);
+    }
+
+    const dataLiberacao = new Date();
+
+    for (const despesa of despesas.data) {
+      despesa.liberacao = ItemOsLiberacao.NA_CONCLUSAO_OS;
+      despesa.data_liberacao = dataLiberacao;
+
+      await this.orderServiceResponsibleExpenseService.atualizarLiberacaoDespesas(
+        os.id,
+        ItemOsLiberacao.NA_CONCLUSAO_OS,
+        new Date(),
+      );
+    }
     // this.despesasService.create()
 
     // 2. Verificar se já está concluída (opcional)
@@ -620,6 +662,9 @@ export class OrdensServicoService {
     if (dto.observacao) {
       os.observacoesInternas = dto.observacao; // ou 'mensagemFinal'
     }
+
+    os.dataConclusao = new Date().toISOString().split('T')[0];
+    os.concluido = true;
 
     // 5. Salvar a OS
     const savedOs = await this.osRepo.save(os);

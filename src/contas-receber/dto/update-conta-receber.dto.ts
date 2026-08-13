@@ -1,40 +1,48 @@
-import { ApiPropertyOptional } from '@nestjs/swagger';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
 import {
   IsDateString,
+  IsEnum,
   IsNumber,
   IsOptional,
   IsString,
   Min,
 } from 'class-validator';
 
+export enum PaymentMethod {
+  PIX = 'PIX',
+  CREDIT_CARD = 'CREDIT_CARD',
+  DEBIT_CARD = 'DEBIT_CARD',
+  BOLETO = 'BOLETO',
+  CASH = 'CASH',
+}
 
 export class UpdateContaReceberDto {
 
 
   @ApiPropertyOptional({
-    example:15,
+    example: 15,
     description:
       'Novo cliente vinculado.',
   })
   @IsOptional()
   @IsNumber()
-  @Type(()=>Number)
+  @Type(() => Number)
   @Min(1)
-  clienteId?:number;
+  clienteId?: number;
 
 
 
 
   @ApiPropertyOptional({
-    example:25,
+    example: 25,
     description:
       'Nova OS vinculada.',
   })
   @IsOptional()
   @IsNumber()
-  @Type(()=>Number)
-  ordemServicoId?:number;
+  @Type(() => Number)
+  ordemServicoId?: number;
 
 
 
@@ -45,50 +53,56 @@ export class UpdateContaReceberDto {
   })
   @IsOptional()
   @IsString()
-  descricao?:string;
+  descricao?: string;
 
 
 
 
   @ApiPropertyOptional({
-    example:3500,
+    example: 3500,
   })
   @IsOptional()
   @IsNumber()
-  @Type(()=>Number)
+  @Type(() => Number)
   @Min(0.01)
-  valorOriginal?:number;
+  valorOriginal?: number;
 
 
-
+  @ApiProperty({
+    example: PaymentMethod.DEBIT_CARD,
+    description: 'Método de pagamento da conta.',
+    enum: PaymentMethod,
+  })
+  @IsEnum(PaymentMethod)
+  paymentMethod!: PaymentMethod;
 
   @ApiPropertyOptional({
-    example:'2026-09-10',
+    example: '2026-09-10',
   })
   @IsOptional()
   @IsDateString()
-  dataVencimento?:string;
+  dataVencimento?: string;
 
 
 
 
   @ApiPropertyOptional({
-    example:'2026-07-15',
+    example: '2026-07-15',
   })
   @IsOptional()
   @IsDateString()
-  dataEmissao?:string;
+  dataEmissao?: string;
 
 
 
 
   @ApiPropertyOptional({
-    example:1,
+    example: 1,
   })
   @IsOptional()
   @IsNumber()
-  @Type(()=>Number)
-  contaFinanceiraId?:number;
+  @Type(() => Number)
+  contaFinanceiraId?: number;
 
 
 }

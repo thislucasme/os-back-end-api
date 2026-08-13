@@ -1,4 +1,5 @@
-import { IsBoolean, IsInt, IsNumber, IsOptional, IsString, Min } from 'class-validator';
+import { IsBoolean, IsEnum, IsInt, IsNumber, IsOptional, IsString, Min } from 'class-validator';
+import { ItemOsLiberacao } from 'src/ordens-servico/entities/item-os.entity';
 
 export class CreateOrderServiceResponsibleExpenseDto {
   @IsInt()
@@ -15,4 +16,8 @@ export class CreateOrderServiceResponsibleExpenseDto {
 
   @IsBoolean()
   assignToOrderService: boolean = true;
+
+  @IsOptional()
+  @IsEnum(ItemOsLiberacao)
+  liberacao?: ItemOsLiberacao = ItemOsLiberacao.NA_CONCLUSAO_OS;
 }
