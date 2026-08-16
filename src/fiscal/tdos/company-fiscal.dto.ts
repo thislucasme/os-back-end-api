@@ -40,6 +40,16 @@ export class CreateFiscalServiceDto {
     @IsOptional()
     @IsString()
     tipoImunidade?: string;
+
+    // Propriedades tributárias adicionadas ao serviço
+    @ApiPropertyOptional() @IsOptional() @IsString() aliquotaIss?: string;
+    @ApiPropertyOptional() @IsOptional() @IsString() percentualTributosSimples?: string;
+    @ApiPropertyOptional() @IsOptional() @IsString() percentualTributosFederal?: string;
+    @ApiPropertyOptional() @IsOptional() @IsString() percentualTributosEstadual?: string;
+    @ApiPropertyOptional() @IsOptional() @IsString() percentualTributosMunicipal?: string;
+    @ApiPropertyOptional() @IsOptional() @IsString() situacaoTributariaPisCofins?: string;
+    @ApiPropertyOptional() @IsOptional() @IsString() aliquotaInssRetido?: string;
+    @ApiPropertyOptional() @IsOptional() @IsString() aliquotaIrRetido?: string;
 }
 
 export class UpsertFiscalServiceDto extends CreateFiscalServiceDto {
@@ -59,14 +69,6 @@ export class UpdateCompanyFiscalDto {
     @ApiPropertyOptional() @IsOptional() @IsString() ambiente?: string;
     @ApiPropertyOptional() @IsOptional() @IsString() serieDps?: string;
     @ApiPropertyOptional() @IsOptional() @IsString() serie?: string;
-    @ApiPropertyOptional() @IsOptional() @IsString() aliquotaIss?: string;
-    @ApiPropertyOptional() @IsOptional() @IsString() percentualTributosSimples?: string;
-    @ApiPropertyOptional() @IsOptional() @IsString() percentualTributosFederal?: string;
-    @ApiPropertyOptional() @IsOptional() @IsString() percentualTributosEstadual?: string;
-    @ApiPropertyOptional() @IsOptional() @IsString() percentualTributosMunicipal?: string;
-    @ApiPropertyOptional() @IsOptional() @IsString() situacaoTributariaPisCofins?: string;
-    @ApiPropertyOptional() @IsOptional() @IsString() aliquotaInssRetido?: string;
-    @ApiPropertyOptional() @IsOptional() @IsString() aliquotaIrRetido?: string;
 
     @ApiPropertyOptional({
         description: 'Lista de serviços fiscais da empresa',

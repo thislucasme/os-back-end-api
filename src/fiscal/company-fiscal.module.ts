@@ -6,9 +6,10 @@ import { CompanyFiscalController } from './company-fiscal.controller';
 import { CompanyFiscalServiceManager } from './company-fiscal.service';
 import { CompanyFiscalService } from './company-service.entity';
 import { CompanyFiscalSettings } from './entities/company-fiscal-settings.entity';
+import { HttpModule } from '@nestjs/axios';
 
 @Module({
-  imports: [
+  imports: [HttpModule,
     TypeOrmModule.forFeature([ CompanyFiscalService,CompanyFiscalSettings, Company, User]),
   ],
   controllers: [CompanyFiscalController],

@@ -1,4 +1,3 @@
-
 import { Company } from 'src/companies/ company.entity';
 import {
     Column,
@@ -42,8 +41,33 @@ export class CompanyFiscalService {
     possuiNaoTributacao!: string;
 
     @Column({ nullable: true })
-    motivoNaoTributacao!: string;
+    motivoNaoTributacao?: string;
 
     @Column({ nullable: true })
-    tipoImunidade!: string;
+    tipoImunidade?: string;
+
+    // Campos tributários movidos para o nível de serviço
+    @Column({ nullable: true })
+    aliquotaIss?: string;
+
+    @Column({ nullable: true })
+    percentualTributosSimples?: string;
+
+    @Column({ nullable: true })
+    percentualTributosFederal?: string;
+
+    @Column({ nullable: true })
+    percentualTributosEstadual?: string;
+
+    @Column({ nullable: true })
+    percentualTributosMunicipal?: string;
+
+    @Column({ nullable: true })
+    situacaoTributariaPisCofins?: string;
+
+    @Column({ nullable: true })
+    aliquotaInssRetido?: string;
+
+    @Column({ nullable: true })
+    aliquotaIrRetido?: string;
 }

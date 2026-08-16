@@ -32,6 +32,18 @@ export class CompanyFiscalController {
         return this.fiscalService.findByUserId(req.user.id);
     }
 
+    @Get('montar-payload-nfse')
+    @ApiResponse({ status: 200, description: 'Montar payload para gerar NFS-e', type: CompanyFiscalSettingsResponseDto })
+    async montarPayloadNfse(@Request() req) {
+        return this.fiscalService.emitirNota(req.user.id, 3000);
+    }
+    @Get('montar-payload-update-emitente')
+    @ApiResponse({ status: 200, description: 'Montar payload para atualizar emitente' })
+    async gerarPayloadUpdateEmitente(@Request() req) {
+        return this.fiscalService.gerarPayloadUpdateEmitente(req.user.id);
+    }
+
+
     @Put()
     @ApiResponse({ status: 200, description: 'Configurações e serviços atualizados com sucesso', type: CompanyFiscalSettingsResponseDto })
     async updateSettings(

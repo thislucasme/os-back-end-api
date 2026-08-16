@@ -82,59 +82,29 @@ export class AssasFiscalInfoService {
         }
     }
 
-    async listNbsCodes(query?: any): Promise<any> {
-        try {
-            const termo = query?.codeDescription || query?.description || query?.termo || '';
+async listNbsCodes(query?: any): Promise<any> {
+    try {
+        const termo = query?.codeDescription || query?.description || query?.termo || '';
 
-            if (!termo) {
-                const response = await firstValueFrom(
-                    this.httpService.get(`${ASAAS_API_URL}/fiscalInfo/nbsCodes`, {
-                        headers: this.getHeaders(),
-                        params: query,
-                    }),
-                );
-                return response.data;
-            }
+        // Se houver termo, buscamos usando ele. 
+        // Nota: Ajuste a chave do parâmetro de acordo com o que a API do Asaas espera para busca por descrição.
+        // Geralmente, se você quer buscar por texto, usa-se 'codeDescription' ou 'description'.
+        const params = termo 
+            ? { codeDescription: termo, limit: 10 } 
+            : { limit: 10 };
 
-            // Para NBS, busca por nbsCode e por codeDescription em paralelo
-            const [resCode, resDesc] = await Promise.all([
-                firstValueFrom(
-                    this.httpService.get(`${ASAAS_API_URL}/fiscalInfo/nbsCodes`, {
-                        headers: this.getHeaders(),
-                        params: { nbsCode: termo, limit: 10 },
-                    }),
-                ).catch(() => ({ data: { data: [] } })),
+        const response = await firstValueFrom(
+            this.httpService.get(`${ASAAS_API_URL}/fiscalInfo/nbsCodes`, {
+                headers: this.getHeaders(),
+                params: params,
+            }),
+        );
 
-                firstValueFrom(
-                    this.httpService.get(`${ASAAS_API_URL}/fiscalInfo/nbsCodes`, {
-                        headers: this.getHeaders(),
-                        params: { codeDescription: termo, limit: 10 },
-                    }),
-                ).catch(() => ({ data: { data: [] } })),
-            ]);
-
-            const listCode = resCode.data?.data || [];
-            const listDesc = resDesc.data?.data || [];
-
-            const map = new Map();
-            [...listCode, ...listDesc].forEach((item: any) => {
-                map.set(item.nbsCode, item);
-            });
-
-            const combinedData = Array.from(map.values());
-
-            return {
-                object: 'list',
-                hasMore: false,
-                totalCount: combinedData.length,
-                limit: 10,
-                offset: 0,
-                data: combinedData,
-            };
-        } catch (error) {
-            this.handleError(error);
-        }
+        return response.data;
+    } catch (error) {
+        this.handleError(error);
     }
+}
 
     private handleError(error: any): never {
         const status = error.response?.status || HttpStatus.INTERNAL_SERVER_ERROR;

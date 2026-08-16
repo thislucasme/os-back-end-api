@@ -6,10 +6,15 @@ import { CreateFiscalServiceDto, UpdateCompanyFiscalDto } from './tdos/company-f
 import { User } from 'src/users/user.entity';
 import { Company } from 'src/companies/ company.entity';
 import { CompanyFiscalSettings } from './entities/company-fiscal-settings.entity';
+import { HttpService } from '@nestjs/axios';
+import { firstValueFrom } from 'rxjs';
+import { PaymentResponseDto } from 'src/assas/cobrancas/dtos/payment-response.dto';
+import { NFSE_API_URL } from 'src/assas/assas.constants';
 
 @Injectable()
 export class CompanyFiscalServiceManager {
     constructor(
+        private readonly httpService: HttpService,
         @InjectRepository(Company)
         private companyRepository: Repository<Company>,
         @InjectRepository(CompanyFiscalSettings)
@@ -59,7 +64,7 @@ export class CompanyFiscalServiceManager {
             throw new NotFoundException('Empresa não encontrada ou sem UID.');
         }
 
-        // Busca ou inicializa as configurações fiscais da tabela própria
+        // Busca ou inicializa as configurações fiscais gerais da empresa
         let settings = await this.settingsRepository.findOne({
             where: { companyUid: company.uid },
         });
@@ -73,12 +78,117 @@ export class CompanyFiscalServiceManager {
             where: { companyUid: company.uid },
         });
 
-        // Retorna unificando os dados da empresa, as configurações fiscais e os serviços
+        // Retorna unificando os dados da empresa, as configurações gerais e os serviços contendo suas tributações específicas
         return {
             ...company,
             ...settings,
             fiscalServices,
         };
+    }
+
+    async emitirNota(userId: string | number, valorServico: number) {
+        // 1. Pega os dados unificados direto da sua função do back-end
+        const dadosEmpresaCompleto = await this.findByUserId(userId);
+
+        // 2. Executa a lógica de cálculo e montagem do payload
+        const payloadPronto = this.gerarPayloadEmissao(dadosEmpresaCompleto, valorServico);
+
+        // 3. Envia o payload para o seu endpoint de emissão ou biblioteca open-nfse
+        // const respostaEmissao = await this.enviarParaOpenNfse(payloadPronto);
+
+        return payloadPronto;
+    }
+
+    async gerarPayloadEmissao(dadosEmpresa: any, valorServico: number) {
+        const servicoConfig = dadosEmpresa.fiscalServices && dadosEmpresa.fiscalServices[0]
+            ? dadosEmpresa.fiscalServices[0]
+            : {};
+
+        const aliqIss = Number(servicoConfig.aliquotaIss) || undefined;
+        const percTribSimples = Number(servicoConfig.percentualTributosSimples) || undefined;
+        const percTribFed = Number(servicoConfig.percentualTributosFederal) || 0;
+        const percTribEst = Number(servicoConfig.percentualTributosEstadual) || 0;
+        const percTribMun = Number(servicoConfig.percentualTributosMunicipal) || 0;
+
+        // Monta o objeto de valores seguindo estritamente a interface ValoresInput do open-nfse
+        const valores: any = {
+            vServ: valorServico,
+        };
+
+        if (aliqIss !== undefined && !isNaN(aliqIss)) {
+            valores.aliqIss = aliqIss;
+        }
+
+        if (percTribSimples !== undefined && !isNaN(percTribSimples)) {
+            valores.pTotTribSN = percTribSimples;
+        }
+
+        // Se houver tributos percentuais ou em valor para preencher o choice totTrib
+        if (percTribFed > 0 || percTribEst > 0 || percTribMun > 0) {
+            valores.pTotTrib = {
+                pTotTribFed: percTribFed,
+                pTotTribEst: percTribEst,
+                pTotTribMun: percTribMun,
+            };
+        }
+
+        return {
+            serie: dadosEmpresa.serie,
+            servico: {
+                cTribNac: servicoConfig.cTribNac || "",
+                cNBS: servicoConfig.cNBS || undefined,
+                descricao: servicoConfig.descricaoServico || "",
+            },
+            valores,
+            tomador: {
+                documento: {
+                    CNPJ: "06288299000108"
+                },
+                nome: "INSTITUTO GOIANO DE PESQUISAS E DIDÁTICA PROFISSIONAL - IGPDP",
+                email: "tomador@mock.com",
+                endereco: {
+                    codMunicipio: "5208707",
+                    cep: "74255220",
+                    logradouro: "Av. T-9",
+                    numero: "2310",
+                    bairro: "Setor Jardim América"
+                }
+            }
+        };
+    }
+
+    async gerarPayloadUpdateEmitente(userId: number) {
+        //getUserWithCompany
+        const dadosEmpresaCompleto = await this.findByUserId(userId);
+        const payload = {
+            cnpj: dadosEmpresaCompleto.cnpj,
+            codigoMunicipio: dadosEmpresaCompleto.codigoMunicipio,
+            razaoSocial: dadosEmpresaCompleto.corporateName,
+            nomeFantasia: dadosEmpresaCompleto.name,
+            inscricaoMunicipal: dadosEmpresaCompleto.inscricaoMunicipal || null,
+            opcaoSimplesNacional: dadosEmpresaCompleto.opcaoSimplesNacional ? String(dadosEmpresaCompleto.opcaoSimplesNacional) : null,
+            regimeApuracaoSimplesNacional: dadosEmpresaCompleto.regimeApuracaoSimplesNacional ? String(dadosEmpresaCompleto.regimeApuracaoSimplesNacional) : null,
+            regimeEspecialTributacao: dadosEmpresaCompleto.regimeEspecialTributacao ? String(dadosEmpresaCompleto.regimeEspecialTributacao) : null,
+            ambiente: dadosEmpresaCompleto.ambiente,
+            serieDps: dadosEmpresaCompleto.serie ? String(dadosEmpresaCompleto.serie) : null,
+            proximoNumeroDps: dadosEmpresaCompleto.serieDps ? Number(dadosEmpresaCompleto.serieDps) : 0,
+        };
+        console.log(payload)
+        try {
+            const response = await firstValueFrom(
+                this.httpService.post<PaymentResponseDto>(
+                    `${NFSE_API_URL}/api/emissores`,
+                    payload,
+                ),
+            );
+
+            return response.data;
+        } catch (error: any) {
+            if (error.response) {
+                console.error("Detalhes do erro:", error.response.data);
+            }
+            throw new BadRequestException(error.response.data)
+        }
     }
 
     async upsertSettings(userId: string | number, dto: UpdateCompanyFiscalDto) {
@@ -91,7 +201,7 @@ export class CompanyFiscalServiceManager {
 
         const { services, ...settingsData } = dto;
 
-        // Busca ou cria as configurações fiscais na tabela própria
+        // Busca ou cria as configurações fiscais gerais da empresa
         let settings = await this.settingsRepository.findOne({
             where: { companyUid: company.uid },
         });
@@ -100,11 +210,11 @@ export class CompanyFiscalServiceManager {
             settings = this.settingsRepository.create({ companyUid: company.uid });
         }
 
-        // Atualiza os dados fiscais na nova tabela
+        // Atualiza apenas os dados gerais na tabela de configurações da empresa
         Object.assign(settings, settingsData);
         await this.settingsRepository.save(settings);
 
-        // Gerenciamento dos serviços fiscais
+        // Gerenciamento dos serviços fiscais (agora salvando as alíquotas e tributos específicos por serviço)
         if (services) {
             const incomingServiceIds = services.filter((s) => s.id).map((s) => s.id);
 
@@ -129,6 +239,8 @@ export class CompanyFiscalServiceManager {
                 await this.serviceRepository.save(service);
             }
         }
+
+        this.gerarPayloadUpdateEmitente(Number(userId))
 
         return this.findByUserId(userId);
     }
@@ -158,7 +270,6 @@ export class CompanyFiscalServiceManager {
             throw new NotFoundException('Empresa não encontrada ou sem UID.');
         }
 
-        // Verifica se já existe configuração fiscal para esta empresa
         const existingSettings = await this.settingsRepository.findOne({
             where: { companyUid: company.uid },
         });
@@ -169,14 +280,12 @@ export class CompanyFiscalServiceManager {
 
         const { services, ...settingsData } = dto;
 
-        // Cria a nova configuração fiscal
         const settings = this.settingsRepository.create({
             ...settingsData,
             companyUid: company.uid,
         });
         await this.settingsRepository.save(settings);
 
-        // Se enviou serviços junto na criação, cadastra-os também
         if (services && services.length > 0) {
             for (const sDto of services) {
                 const service = this.serviceRepository.create({ ...sDto, companyUid: company.uid });
