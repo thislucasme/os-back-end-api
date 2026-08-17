@@ -1,3 +1,4 @@
+import { StorageModule } from './storage/storage.module';
 import { CommonModule } from './common/common.module';
 import { CertificadoModule } from './fiscal/certificado/certificado.module';
 import { CompanyFiscalModule } from './fiscal/company-fiscal.module';
@@ -34,6 +35,7 @@ import { FolhaPagamentoModule } from './folha-pagamento/folha-pagamento.module';
 
 @Module({
   imports: [
+    StorageModule,
     CommonModule,
     CertificadoModule,
     CompanyFiscalModule,
