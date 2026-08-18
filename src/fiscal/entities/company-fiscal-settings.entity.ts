@@ -15,6 +15,10 @@ export class CompanyFiscalSettings {
   @Column({ type: 'uuid', unique: true })
   companyUid!: string;
 
+
+  @Column({ type: 'uuid' })
+  nfseEmitenteUid!: string;
+
   @OneToOne(() => Company, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'companyUid', referencedColumnName: 'uid' })
   company!: Company;

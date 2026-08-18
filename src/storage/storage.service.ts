@@ -6,6 +6,9 @@ import {
   S3Client,
 } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
+import { DanfseHtmlBuilder, DanfseXmlParser } from '@notaas/danfse-viewer';
+
+import puppeteer from 'puppeteer';
 
 @Injectable()
 export class StorageService {
@@ -83,4 +86,78 @@ export class StorageService {
       expiresIn,
     });
   }
+
+private extrairEmpresaIdDaKey(key: string): string {
+  const match = key.match(/^empresas\/([^/]+)\//);
+
+  if (!match) {
+    throw new Error(`Key de storage inválida: ${key}`);
+  }
+
+  return match[1];
+}
+
+async gerarDanfseDoXml(key: string): Promise<Buffer> {
+  const response = await this.client.send(
+    new GetObjectCommand({
+      Bucket: this.bucket,
+      Key: key,
+    }),
+  );
+
+  if (!response.Body) {
+    throw new Error(`XML não encontrado no storage: ${key}`);
+  }
+
+  const xml = await response.Body.transformToString('utf-8');
+
+  if (!xml.trim()) {
+    throw new Error(`XML vazio: ${key}`);
+  }
+
+  const parser = new DanfseXmlParser();
+  const data = await parser.parse(xml);
+
+  const builder = new DanfseHtmlBuilder();
+  const html = builder.build(data);
+
+  const browser = await puppeteer.launch({
+    headless: true,
+  });
+
+  try {
+    const page = await browser.newPage();
+
+    await page.setContent(html, {
+      waitUntil: 'networkidle0',
+    });
+
+    const pdf = await page.pdf({
+      format: 'a4',
+      printBackground: true,
+      preferCSSPageSize: true,
+    });
+
+    return Buffer.from(pdf);
+  } finally {
+    await browser.close();
+  }
+}
+
+async getXml(key: string): Promise<Buffer> {
+    const response = await this.client.send(
+        new GetObjectCommand({
+            Bucket: this.bucket,
+            Key: key,
+        }),
+    );
+
+    if (!response.Body) {
+        throw new Error(`XML não encontrado no storage: ${key}`);
+    }
+
+    const xml = await response.Body.transformToByteArray();
+
+    return Buffer.from(xml);
+}
 }

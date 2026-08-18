@@ -4,6 +4,7 @@ import { CreateFiscalServiceDto, UpdateCompanyFiscalDto } from './tdos/company-f
 import { ApiBearerAuth, ApiResponse } from '@nestjs/swagger';
 import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
 import { FiscalServiceResponseDto, CompanyFiscalSettingsResponseDto } from './tdos/company-fiscal-response.tdo';
+import { CompanyFiscalService } from './company-service.entity';
 
 @ApiBearerAuth()
 @UseGuards(JwtAuthGuard)
@@ -61,4 +62,13 @@ export class CompanyFiscalController {
     ) {
         return this.fiscalService.deleteService(req.user.id, serviceId);
     }
+
+        @Get('services/all')
+    @ApiResponse({ type:CompanyFiscalService })
+    async getCompanySerices(
+        @Request() req,
+    ) {
+        return this.fiscalService.getCompanySerices(req.user.id);
+    }
+    
 }

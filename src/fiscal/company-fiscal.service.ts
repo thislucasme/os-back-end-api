@@ -210,9 +210,7 @@ export class CompanyFiscalServiceManager {
             settings = this.settingsRepository.create({ companyUid: company.uid });
         }
 
-        // Atualiza apenas os dados gerais na tabela de configurações da empresa
-        Object.assign(settings, settingsData);
-        await this.settingsRepository.save(settings);
+
 
         // Gerenciamento dos serviços fiscais (agora salvando as alíquotas e tributos específicos por serviço)
         if (services) {
@@ -240,7 +238,14 @@ export class CompanyFiscalServiceManager {
             }
         }
 
-        this.gerarPayloadUpdateEmitente(Number(userId))
+        const nfseEmitente = await this.gerarPayloadUpdateEmitente(Number(userId))
+
+        if (nfseEmitente.id)
+            settings.nfseEmitenteUid = nfseEmitente.id
+
+        // Atualiza apenas os dados gerais na tabela de configurações da empresa
+        Object.assign(settings, settingsData);
+        await this.settingsRepository.save(settings);
 
         return this.findByUserId(userId);
     }
@@ -260,6 +265,22 @@ export class CompanyFiscalServiceManager {
 
         await this.serviceRepository.remove(service);
         return { success: true };
+    }
+
+    async getCompanySerices(userId: string | number) {
+        const user = await this.getUserWithCompany(Number(userId));
+        const company = user.company;
+
+        if (!company || !company.uid) {
+            throw new NotFoundException('Empresa não encontrada ou sem UID.');
+        }
+
+        const services = await this.serviceRepository.find({ where: { companyUid: company.uid } });
+        if (!services) {
+            throw new NotFoundException('Serviços não encontrado.');
+        }
+
+        return services
     }
 
     async createSettings(userId: string | number, dto: UpdateCompanyFiscalDto) {
