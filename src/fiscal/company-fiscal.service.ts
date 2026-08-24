@@ -10,6 +10,7 @@ import { HttpService } from '@nestjs/axios';
 import { firstValueFrom } from 'rxjs';
 import { PaymentResponseDto } from 'src/assas/cobrancas/dtos/payment-response.dto';
 import { NFSE_API_URL } from 'src/assas/assas.constants';
+import { ClienteFornecedor } from 'src/clientes-fornecedores/entities/cliente-fornecedor.entity';
 
 @Injectable()
 export class CompanyFiscalServiceManager {
@@ -23,7 +24,10 @@ export class CompanyFiscalServiceManager {
         private serviceRepository: Repository<CompanyFiscalService>,
         @InjectRepository(User)
         private userRepository: Repository<User>,
+        @InjectRepository(ClienteFornecedor)
+        private clienteFornecedorRepository: Repository<ClienteFornecedor>,
     ) { }
+
 
     public async getUserWithCompany(userId: number) {
         const user = await this.userRepository.findOne({
@@ -38,6 +42,23 @@ export class CompanyFiscalServiceManager {
         }
 
         return user;
+    }
+
+    async findOneClienteFornecedorBy(userId: number, clienteFornecedorId: number) {
+        const company = await this.getUserWithCompany(userId);
+
+        const item = await this.clienteFornecedorRepository.findOne({
+            where: {
+                id: clienteFornecedorId,
+                companyId: company.id,
+            },
+        });
+
+        if (!item) {
+            throw new NotFoundException('Cadastro não encontrado.');
+        }
+
+        return item;
     }
 
     async create(userId: number, dto: CreateFiscalServiceDto) {
@@ -86,12 +107,11 @@ export class CompanyFiscalServiceManager {
         };
     }
 
-    async emitirNota(userId: string | number, valorServico: number) {
+    async emitirNota(userId: string | number, valorServico: number, serviceId: string, clienteFornecedorId: number) {
         // 1. Pega os dados unificados direto da sua função do back-end
         const dadosEmpresaCompleto = await this.findByUserId(userId);
-
         // 2. Executa a lógica de cálculo e montagem do payload
-        const payloadPronto = this.gerarPayloadEmissao(dadosEmpresaCompleto, valorServico);
+        const payloadPronto = this.gerarPayloadEmissao(dadosEmpresaCompleto, valorServico, serviceId, userId, clienteFornecedorId);
 
         // 3. Envia o payload para o seu endpoint de emissão ou biblioteca open-nfse
         // const respostaEmissao = await this.enviarParaOpenNfse(payloadPronto);
@@ -99,11 +119,15 @@ export class CompanyFiscalServiceManager {
         return payloadPronto;
     }
 
-    async gerarPayloadEmissao(dadosEmpresa: any, valorServico: number) {
-        const servicoConfig = dadosEmpresa.fiscalServices && dadosEmpresa.fiscalServices[0]
-            ? dadosEmpresa.fiscalServices[0]
-            : {};
-
+    async gerarPayloadEmissao(dadosEmpresa: any, valorServico: number, serviceId: string, userId: string | number, clienteFornecedorId: number) {
+        const servicoConfig = await this.serviceRepository.findOne({ where: { id: serviceId, companyUid: dadosEmpresa.uid } });
+        const clienteFornecedor = await this.findOneClienteFornecedorBy(Number(userId), clienteFornecedorId)
+        if (!servicoConfig) {
+            throw new BadRequestException("Serviço não encontrado")
+        }
+        if (!clienteFornecedor) {
+            throw new BadRequestException("Cliente ou fornecedor não encontrado")
+        }
         const aliqIss = Number(servicoConfig.aliquotaIss) || undefined;
         const percTribSimples = Number(servicoConfig.percentualTributosSimples) || undefined;
         const percTribFed = Number(servicoConfig.percentualTributosFederal) || 0;
@@ -132,7 +156,7 @@ export class CompanyFiscalServiceManager {
             };
         }
 
-        return {
+             const payload =  {
             serie: dadosEmpresa.serie,
             servico: {
                 cTribNac: servicoConfig.cTribNac || "",
@@ -142,10 +166,10 @@ export class CompanyFiscalServiceManager {
             valores,
             tomador: {
                 documento: {
-                    CNPJ: "06288299000108"
+                    CNPJ: clienteFornecedor.documento
                 },
-                nome: "INSTITUTO GOIANO DE PESQUISAS E DIDÁTICA PROFISSIONAL - IGPDP",
-                email: "tomador@mock.com",
+                nome: clienteFornecedor.nome,
+                email: clienteFornecedor.email,
                 endereco: {
                     codMunicipio: "5208707",
                     cep: "74255220",
@@ -155,6 +179,24 @@ export class CompanyFiscalServiceManager {
                 }
             }
         };
+
+        try {
+            const response = await firstValueFrom(
+                this.httpService.post<any>(
+                    `${NFSE_API_URL}/api/nfse/emissores/${dadosEmpresa.nfseEmitenteUid}`,
+                    payload,
+                ),
+            );
+
+            return response.data;
+        } catch (error: any) {
+            if (error.response) {
+                console.error("Detalhes do erro:", error.response.data);
+            }
+            throw new BadRequestException("Erro ao emitir nfse", error.response.data)
+        }
+
+   return payload
     }
 
     async gerarPayloadUpdateEmitente(userId: number) {

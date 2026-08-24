@@ -5,6 +5,7 @@ import { ApiBearerAuth, ApiResponse } from '@nestjs/swagger';
 import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
 import { FiscalServiceResponseDto, CompanyFiscalSettingsResponseDto } from './tdos/company-fiscal-response.tdo';
 import { CompanyFiscalService } from './company-service.entity';
+import { EmitirNfseDto } from './tdos/emitir-nfse.dto';
 
 @ApiBearerAuth()
 @UseGuards(JwtAuthGuard)
@@ -36,12 +37,29 @@ export class CompanyFiscalController {
     @Get('montar-payload-nfse')
     @ApiResponse({ status: 200, description: 'Montar payload para gerar NFS-e', type: CompanyFiscalSettingsResponseDto })
     async montarPayloadNfse(@Request() req) {
-        return this.fiscalService.emitirNota(req.user.id, 3000);
+        return this.fiscalService.emitirNota(req.user.id, 3000, "b61466f5-a0e8-426f-a04c-0659b611ce4d", 4);
     }
     @Get('montar-payload-update-emitente')
     @ApiResponse({ status: 200, description: 'Montar payload para atualizar emitente' })
     async gerarPayloadUpdateEmitente(@Request() req) {
         return this.fiscalService.gerarPayloadUpdateEmitente(req.user.id);
+    }
+
+    @Post('emitir-nfse')
+    @ApiResponse({
+        status: 200,
+        description: 'NFS-e emitida com sucesso',
+    })
+    async emitirNfse(
+        @Request() req,
+        @Body() dto: EmitirNfseDto,
+    ) {
+        return this.fiscalService.emitirNota(
+            req.user.id,
+            dto.valorServico,
+            dto.serviceId,
+            dto.clienteFornecedorId,
+        );
     }
 
 
@@ -63,12 +81,12 @@ export class CompanyFiscalController {
         return this.fiscalService.deleteService(req.user.id, serviceId);
     }
 
-        @Get('services/all')
-    @ApiResponse({ type:CompanyFiscalService })
+    @Get('services/all')
+    @ApiResponse({ type: CompanyFiscalService })
     async getCompanySerices(
         @Request() req,
     ) {
         return this.fiscalService.getCompanySerices(req.user.id);
     }
-    
+
 }

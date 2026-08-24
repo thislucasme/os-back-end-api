@@ -141,7 +141,6 @@ export class ClientesFornecedoresService {
     }
 
     async findOne(userId: number, id: number) {
-        console.log(userId, id)
         const company = await this.getCompanyByUserId(userId);
 
         const item = await this.repo.findOne({
