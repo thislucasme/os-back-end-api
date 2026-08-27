@@ -1,10 +1,15 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { CryptoCertificateService } from 'src/common/crypto.service';
 import { UploadCertificadoDto } from './tdo/upload-certificado.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Certificate } from './entities/certificado.entity';
 import { Repository } from 'typeorm';
 import { User } from 'src/users/user.entity';
+import { CompanyFiscalService } from '../company-service.entity';
+import { CompanyFiscalServiceManager } from '../company-fiscal.service';
+import { ConfigService } from '@nestjs/config';
+import { HttpService } from '@nestjs/axios';
+import { firstValueFrom } from 'rxjs';
 
 @Injectable()
 export class CertificadoService {
@@ -14,6 +19,9 @@ export class CertificadoService {
         private certificateRepository: Repository<Certificate>,
         @InjectRepository(User)
         private userRepository: Repository<User>,
+        private readonly companyFiscalService: CompanyFiscalServiceManager,
+        private readonly configService: ConfigService,
+        private readonly httpService: HttpService,
     ) { }
 
     public async getUserWithCompany(userId: number) {
@@ -35,8 +43,12 @@ export class CertificadoService {
         userId: number,
         dto: UploadCertificadoDto,
     ) {
+        const nfseApiUrl = this.configService.get<string>('NFSE_API_URL');
         const user = await this.getUserWithCompany(userId);
         const company = user.company;
+
+        const data = await this.companyFiscalService.findByUserId(userId)
+        const nfseEmitenteUid = data.nfseEmitenteUid
 
         // Alterado de company.uid para company.id
         if (!company || !company.id) {
@@ -44,6 +56,29 @@ export class CertificadoService {
         }
 
         Buffer.from(dto.pfxBase64, 'base64');
+
+        const payload = {
+            pfxBase64: dto.pfxBase64,
+            password: dto.password,
+        };
+
+        try {
+            const response = await firstValueFrom(
+                this.httpService.post<any>(
+                    `${nfseApiUrl}/api/emissores/${nfseEmitenteUid}/certificado`,
+                    payload,
+                ),
+            );
+
+
+        } catch (error: any) {
+            if (error.response) {
+                console.error("Detalhes do erro:", error.response.data);
+            }
+            throw new BadRequestException(
+                error.response?.data || "Erro ao enviar certificado para a API de NFS-e"
+            );
+        }
 
         const certificadoPfxCriptografado = this.crypto.encrypt(dto.pfxBase64);
         const certificadoSenhaCriptografada = this.crypto.encrypt(dto.password);

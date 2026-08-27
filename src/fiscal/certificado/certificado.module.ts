@@ -7,9 +7,11 @@
     import { User } from 'src/users/user.entity';
     import { CommonModule } from 'src/common/common.module';
 import { CryptoCertificateService } from 'src/common/crypto.service';
+import { CompanyFiscalModule } from '../company-fiscal.module';
+import { HttpModule } from '@nestjs/axios';
 
     @Module({
-        imports: [CommonModule, TypeOrmModule.forFeature([ Certificate, User])],
+        imports: [HttpModule, CommonModule,CompanyFiscalModule, TypeOrmModule.forFeature([ Certificate, User])],
         controllers: [
             CertificadoController,],
         providers: [
