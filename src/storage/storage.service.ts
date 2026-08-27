@@ -121,8 +121,12 @@ async gerarDanfseDoXml(key: string): Promise<Buffer> {
   const builder = new DanfseHtmlBuilder();
   const html = builder.build(data);
 
-  const browser = await puppeteer.launch({
+const browser = await puppeteer.launch({
     headless: true,
+    args: [
+      '--no-sandbox',
+      '--disable-setuid-sandbox',
+    ],
   });
 
   try {
