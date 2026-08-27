@@ -36,24 +36,12 @@ export class ContasReceberService {
     @InjectRepository(ContaReceber)
     private readonly repository: Repository<ContaReceber>,
 
-    @InjectRepository(Recebimento)
-    private readonly recebimentosRepository: Repository<Recebimento>,
-
     @InjectRepository(User)
     private readonly usersRepository: Repository<User>,
 
     @InjectRepository(ContaReceberParcela)
     private readonly parcelasRepository:
       Repository<ContaReceberParcela>,
-
-    @InjectRepository(Company)
-    private readonly companyRepository:
-      Repository<Company>,
-
-    @InjectRepository(OrdemServico)
-    private readonly ordemServicoRepository: Repository<OrdemServico>,
-
-    private readonly userService: UsersService,
 
     private readonly movimentacoesService: MovimentacoesService,
 

@@ -1,11 +1,13 @@
-import { Controller, Get, Put, Delete, Body, Param, UseGuards, Post, Request } from '@nestjs/common';
+import { Controller, Get, Put, Delete, Body, Param, UseGuards, Post, Request, Query } from '@nestjs/common';
 import { CompanyFiscalServiceManager } from './company-fiscal.service';
 import { CreateFiscalServiceDto, UpdateCompanyFiscalDto } from './tdos/company-fiscal.dto';
-import { ApiBearerAuth, ApiResponse } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiOperation, ApiParam, ApiQuery, ApiResponse } from '@nestjs/swagger';
 import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
 import { FiscalServiceResponseDto, CompanyFiscalSettingsResponseDto } from './tdos/company-fiscal-response.tdo';
 import { CompanyFiscalService } from './company-service.entity';
 import { EmitirNfseDto } from './tdos/emitir-nfse.dto';
+
+import type { ListarNfseQuery } from './company-fiscal.service';
 
 @ApiBearerAuth()
 @UseGuards(JwtAuthGuard)
@@ -60,6 +62,44 @@ export class CompanyFiscalController {
             dto.serviceId,
             dto.clienteFornecedorId,
         );
+    }
+
+    @Get('emissores/:cnpjEmissor/filtrar')
+    @ApiOperation({ summary: 'Listar NFS-e por CNPJ do emissor com paginação e filtros' })
+    @ApiParam({ name: 'cnpjEmissor', description: 'CNPJ do emissor' })
+    @ApiQuery({ name: 'page', required: false, description: 'Número da página' })
+    @ApiQuery({ name: 'limit', required: false, description: 'Itens por página' })
+    @ApiQuery({ name: 'tomadorDocumento', required: false, description: 'CNPJ/CPF do tomador' })
+    @ApiQuery({ name: 'tomadorNome', required: false, description: 'Razão social/nome do tomador' })
+    @ApiQuery({ name: 'numeroDps', required: false, description: 'Número da DPS' })
+    @ApiQuery({ name: 'serieDps', required: false, description: 'Série da DPS' })
+    @ApiQuery({ name: 'chaveAcesso', required: false, description: 'Chave de acesso' })
+    @ApiResponse({
+        status: 200,
+        description: 'Lista de NFS-e recuperada com sucesso',
+    })
+    async findByCnpjEmissor(
+        @Param('cnpjEmissor') cnpjEmissor: string,
+        @Query('page') page?: number,
+        @Query('limit') limit?: number,
+        @Query('tomadorDocumento') tomadorDocumento?: string,
+        @Query('tomadorNome') tomadorNome?: string,
+        @Query('numeroDps') numeroDps?: string,
+        @Query('serieDps') serieDps?: string,
+        @Query('chaveAcesso') chaveAcesso?: string,
+    ) {
+        // Monta o objeto de query exatamente como o seu service espera
+        const query: ListarNfseQuery = {
+            page: page ? Number(page) : undefined,
+            limit: limit ? Number(limit) : undefined,
+            tomadorDocumento,
+            tomadorNome,
+            numeroDps,
+            serieDps,
+            chaveAcesso,
+        };
+
+        return this.fiscalService.listarNfsePorCnpjEmissor(cnpjEmissor, query);
     }
 
 

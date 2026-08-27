@@ -1,2 +1,2 @@
-export const ASAAS_API_URL = 'https://api-sandbox.asaas.com/v3';
-export const NFSE_API_URL = 'http://localhost:4000';
+// export const ASAAS_API_URL = process.env.ASAAS_API_URL;
+// export const NFSE_API_URL = process.env.NFSE_API_URL;

@@ -1,12 +1,16 @@
 import { Injectable, HttpException, HttpStatus } from '@nestjs/common';
 import { HttpService } from '@nestjs/axios';
 import { firstValueFrom } from 'rxjs';
-import { ASAAS_API_URL } from '../assas.constants';
 import { FiscalInfoQueryDto, FiscalInfoResponseDto } from './fiscal-info.dto';
+import { ConfigService } from '@nestjs/config';
 
 @Injectable()
 export class AssasFiscalInfoService {
-    constructor(private readonly httpService: HttpService) { }
+    constructor(private readonly httpService: HttpService, private readonly configService: ConfigService) { }
+
+  private  nfseApiUrl(): string {
+    return this.configService.get<string>('ASAAS_API_URL') || '';
+  }
 
     private getHeaders() {
         const token = process.env.ASAAS_ACCESS_TOKEN; // Ou process.env.ASAAS_API_KEY dependendo do seu .env
@@ -33,7 +37,7 @@ export class AssasFiscalInfoService {
             // Se não passou termo, retorna a listagem padrão
             if (!termo) {
                 const response = await firstValueFrom(
-                    this.httpService.get(`${ASAAS_API_URL}/fiscalInfo/federalServiceCodes`, {
+                    this.httpService.get(`${this.nfseApiUrl()}/fiscalInfo/federalServiceCodes`, {
                         headers: this.getHeaders(),
                         params: query,
                     }),
@@ -44,14 +48,14 @@ export class AssasFiscalInfoService {
             // Faz a busca em paralelo: tentando por código E por descrição no Asaas
             const [resCode, resDesc] = await Promise.all([
                 firstValueFrom(
-                    this.httpService.get(`${ASAAS_API_URL}/fiscalInfo/federalServiceCodes`, {
+                    this.httpService.get(`${this.nfseApiUrl()}/fiscalInfo/federalServiceCodes`, {
                         headers: this.getHeaders(),
                         params: { code: termo, limit: 10 },
                     }),
                 ).catch(() => ({ data: { data: [] } })),
 
                 firstValueFrom(
-                    this.httpService.get(`${ASAAS_API_URL}/fiscalInfo/federalServiceCodes`, {
+                    this.httpService.get(`${this.nfseApiUrl()}/fiscalInfo/federalServiceCodes`, {
                         headers: this.getHeaders(),
                         params: { description: termo, limit: 10 },
                     }),
@@ -82,29 +86,29 @@ export class AssasFiscalInfoService {
         }
     }
 
-async listNbsCodes(query?: any): Promise<any> {
-    try {
-        const termo = query?.codeDescription || query?.description || query?.termo || '';
+    async listNbsCodes(query?: any): Promise<any> {
+        try {
+            const termo = query?.codeDescription || query?.description || query?.termo || '';
 
-        // Se houver termo, buscamos usando ele. 
-        // Nota: Ajuste a chave do parâmetro de acordo com o que a API do Asaas espera para busca por descrição.
-        // Geralmente, se você quer buscar por texto, usa-se 'codeDescription' ou 'description'.
-        const params = termo 
-            ? { codeDescription: termo, limit: 10 } 
-            : { limit: 10 };
+            // Se houver termo, buscamos usando ele. 
+            // Nota: Ajuste a chave do parâmetro de acordo com o que a API do Asaas espera para busca por descrição.
+            // Geralmente, se você quer buscar por texto, usa-se 'codeDescription' ou 'description'.
+            const params = termo
+                ? { codeDescription: termo, limit: 10 }
+                : { limit: 10 };
 
-        const response = await firstValueFrom(
-            this.httpService.get(`${ASAAS_API_URL}/fiscalInfo/nbsCodes`, {
-                headers: this.getHeaders(),
-                params: params,
-            }),
-        );
+            const response = await firstValueFrom(
+                this.httpService.get(`${this.nfseApiUrl()}/fiscalInfo/nbsCodes`, {
+                    headers: this.getHeaders(),
+                    params: params,
+                }),
+            );
 
-        return response.data;
-    } catch (error) {
-        this.handleError(error);
+            return response.data;
+        } catch (error) {
+            this.handleError(error);
+        }
     }
-}
 
     private handleError(error: any): never {
         const status = error.response?.status || HttpStatus.INTERNAL_SERVER_ERROR;

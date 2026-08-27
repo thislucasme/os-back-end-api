@@ -41,7 +41,7 @@ function toAbsoluteUrl(url?: string | null): string {
     return url;
   }
 
-  const baseUrl = process.env.API_PUBLIC_URL || 'http://localhost:8007';
+  const baseUrl = process.env.API_PUBLIC_URL;
 
   return `${baseUrl}${url.startsWith('/') ? url : `/${url}`}`;
 }

@@ -4,12 +4,17 @@ import { firstValueFrom } from 'rxjs';
 import { CreateClienteDto } from './dto/create-cliente.dto';
 import { UpdateClienteDto } from './dto/update-cliente.dto';
 import { ClienteResponseDto } from './dto/cliente-response.dto';
-import { ASAAS_API_URL } from '../assas.constants';
+
+import { ConfigService } from '@nestjs/config';
 
 
 @Injectable()
 export class ClientesAssasService {
-    constructor(private readonly httpService: HttpService) { }
+    constructor(private readonly httpService: HttpService, private readonly configService: ConfigService) { }
+
+  private  nfseApiUrl(): string {
+    return this.configService.get<string>('ASAAS_API_URL') || '';
+  }
 
     private getHeaders(token: string) {
         return {
@@ -34,7 +39,7 @@ export class ClientesAssasService {
 
             const response = await firstValueFrom(
                 this.httpService.post<ClienteResponseDto>(
-                    `${ASAAS_API_URL}/customers`,
+                    `${this.nfseApiUrl()}/customers`,
                     data,
                     {
                         headers: this.getHeaders(token),
@@ -55,7 +60,7 @@ export class ClientesAssasService {
     ): Promise<{ data: ClienteResponseDto[]; totalCount: number; limit: number; offset: number }> {
         try {
             const response = await firstValueFrom(
-                this.httpService.get(`${ASAAS_API_URL}/customers`, {
+                this.httpService.get(`${this.nfseApiUrl()}/customers`, {
                     headers: this.getHeaders(token),
                     params: query,
                 })
@@ -69,7 +74,7 @@ export class ClientesAssasService {
     async findOne(token: string, id: string): Promise<ClienteResponseDto> {
         try {
             const response = await firstValueFrom(
-                this.httpService.get<ClienteResponseDto>(`${ASAAS_API_URL}/customers/${id}`, {
+                this.httpService.get<ClienteResponseDto>(`${this.nfseApiUrl()}/customers/${id}`, {
                     headers: this.getHeaders(token),
                 })
             );
@@ -82,7 +87,7 @@ export class ClientesAssasService {
     async update(token: string, id: string, data: UpdateClienteDto): Promise<ClienteResponseDto> {
         try {
             const response = await firstValueFrom(
-                this.httpService.put<ClienteResponseDto>(`${ASAAS_API_URL}/customers/${id}`, data, {
+                this.httpService.put<ClienteResponseDto>(`${this.nfseApiUrl()}/customers/${id}`, data, {
                     headers: this.getHeaders(token),
                 })
             );
@@ -95,7 +100,7 @@ export class ClientesAssasService {
     async remove(token: string, id: string): Promise<void> {
         try {
             await firstValueFrom(
-                this.httpService.delete(`${ASAAS_API_URL}/customers/${id}`, {
+                this.httpService.delete(`${this.nfseApiUrl()}/customers/${id}`, {
                     headers: this.getHeaders(token),
                 })
             );
@@ -107,7 +112,7 @@ export class ClientesAssasService {
     async findByCpfCnpj(token: string, cpfCnpj: string): Promise<ClienteResponseDto | null> {
         try {
             const response = await firstValueFrom(
-                this.httpService.get(`${ASAAS_API_URL}/customers`, {
+                this.httpService.get(`${this.nfseApiUrl()}/customers`, {
                     headers: this.getHeaders(token),
                     params: {
                         cpfCnpj,

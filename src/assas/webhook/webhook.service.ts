@@ -1,7 +1,6 @@
 import { HttpService } from '@nestjs/axios';
 import { forwardRef, HttpException, HttpStatus, Inject, Injectable, Logger, UnauthorizedException } from '@nestjs/common';
 import { firstValueFrom } from 'rxjs';
-import { ASAAS_API_URL } from '../assas.constants';
 import { ConfigService } from '@nestjs/config';
 import { CompaniesService } from 'src/companies/companies.service';
 import { AsaasWebhookDto, PaymentDto } from './dtos/asaas-webhook.dto';
@@ -15,6 +14,10 @@ export class WebhookService {
         private readonly companyService: CompaniesService
     ) { }
     private readonly logger = new Logger(WebhookService.name);
+
+  private  nfseApiUrl(): string {
+    return this.configService.get<string>('ASAAS_API_URL') || '';
+  }
 
 
     async process(companyId: string, payload: AsaasWebhookDto, headers: Record<string, string>) {
@@ -156,7 +159,7 @@ export class WebhookService {
 
             const response = await firstValueFrom(
                 this.httpService.post(
-                    `${ASAAS_API_URL}/webhook`,
+                    `${this.nfseApiUrl()}/webhook`,
                     payload,
                     { headers: this.getHeaders(token) },
                 ),
@@ -171,7 +174,7 @@ export class WebhookService {
     async getWebhook(token: string) {
         try {
             const response = await firstValueFrom(
-                this.httpService.get(`${ASAAS_API_URL}/webhook`, {
+                this.httpService.get(`${this.nfseApiUrl()}/webhook`, {
                     headers: this.getHeaders(token),
                 }),
             );

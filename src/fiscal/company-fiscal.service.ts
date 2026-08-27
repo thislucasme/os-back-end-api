@@ -9,8 +9,27 @@ import { CompanyFiscalSettings } from './entities/company-fiscal-settings.entity
 import { HttpService } from '@nestjs/axios';
 import { firstValueFrom } from 'rxjs';
 import { PaymentResponseDto } from 'src/assas/cobrancas/dtos/payment-response.dto';
-import { NFSE_API_URL } from 'src/assas/assas.constants';
 import { ClienteFornecedor } from 'src/clientes-fornecedores/entities/cliente-fornecedor.entity';
+import { ConfigService } from '@nestjs/config';
+
+export enum NfseStatus {
+    PENDENTE = 'PENDENTE',
+    PROCESSANDO = 'PROCESSANDO',
+    OK = 'OK',
+    REJEITADA = 'REJEITADA',
+    FALHA_COMUNICACAO = 'FALHA_COMUNICACAO',
+    ERRO_INTERNO = 'ERRO_INTERNO',
+}
+
+export type ListarNfseQuery = {
+    page?: number;
+    limit?: number;
+    tomadorDocumento?: string;
+    tomadorNome?: string;
+    numeroDps?: string;
+    serieDps?: string;
+    chaveAcesso?: string;
+};
 
 @Injectable()
 export class CompanyFiscalServiceManager {
@@ -26,6 +45,7 @@ export class CompanyFiscalServiceManager {
         private userRepository: Repository<User>,
         @InjectRepository(ClienteFornecedor)
         private clienteFornecedorRepository: Repository<ClienteFornecedor>,
+        private readonly configService: ConfigService
     ) { }
 
 
@@ -122,6 +142,7 @@ export class CompanyFiscalServiceManager {
     async gerarPayloadEmissao(dadosEmpresa: any, valorServico: number, serviceId: string, userId: string | number, clienteFornecedorId: number) {
         const servicoConfig = await this.serviceRepository.findOne({ where: { id: serviceId, companyUid: dadosEmpresa.uid } });
         const clienteFornecedor = await this.findOneClienteFornecedorBy(Number(userId), clienteFornecedorId)
+        const nfseApiUrl = this.configService.get<string>('NFSE_API_URL');
         if (!servicoConfig) {
             throw new BadRequestException("Serviço não encontrado")
         }
@@ -156,7 +177,7 @@ export class CompanyFiscalServiceManager {
             };
         }
 
-             const payload =  {
+        const payload = {
             serie: dadosEmpresa.serie,
             servico: {
                 cTribNac: servicoConfig.cTribNac || "",
@@ -183,7 +204,7 @@ export class CompanyFiscalServiceManager {
         try {
             const response = await firstValueFrom(
                 this.httpService.post<any>(
-                    `${NFSE_API_URL}/api/nfse/emissores/${dadosEmpresa.nfseEmitenteUid}`,
+                    `${nfseApiUrl}/api/nfse/emissores/${dadosEmpresa.nfseEmitenteUid}`,
                     payload,
                 ),
             );
@@ -196,10 +217,11 @@ export class CompanyFiscalServiceManager {
             throw new BadRequestException("Erro ao emitir nfse", error.response.data)
         }
 
-   return payload
+        return payload
     }
 
     async gerarPayloadUpdateEmitente(userId: number) {
+        const nfseApiUrl = this.configService.get<string>('NFSE_API_URL');
         //getUserWithCompany
         const dadosEmpresaCompleto = await this.findByUserId(userId);
         const payload = {
@@ -219,7 +241,7 @@ export class CompanyFiscalServiceManager {
         try {
             const response = await firstValueFrom(
                 this.httpService.post<PaymentResponseDto>(
-                    `${NFSE_API_URL}/api/emissores`,
+                    `${nfseApiUrl}/api/emissores`,
                     payload,
                 ),
             );
@@ -230,6 +252,32 @@ export class CompanyFiscalServiceManager {
                 console.error("Detalhes do erro:", error.response.data);
             }
             throw new BadRequestException(error.response.data)
+        }
+    }
+
+    async listarNfsePorCnpjEmissor(cnpjEmissor: string, query?: ListarNfseQuery) {
+        const nfseApiUrl = this.configService.get<string>('NFSE_API_URL');
+        try {
+            const urlCompleta = this.httpService.axiosRef.getUri({
+                url: `${nfseApiUrl}/api/nfse/emissores/${cnpjEmissor}/filtrar`,
+                params: query,
+            });
+
+            console.log(`curl -X GET "${urlCompleta}"`);
+
+            const response = await firstValueFrom(
+                this.httpService.get(
+                    `${nfseApiUrl}/api/nfse/emissores/${cnpjEmissor}/filtrar`,
+                    { params: query },
+                ),
+            );
+
+            return response.data;
+        } catch (error: any) {
+            if (error.response) {
+                console.error('Detalhes do erro:', error);
+            }
+            throw new BadRequestException(error.response?.data || 'Erro ao listar NFS-e');
         }
     }
 
