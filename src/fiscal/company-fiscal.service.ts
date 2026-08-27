@@ -64,20 +64,24 @@ export class CompanyFiscalServiceManager {
         return user;
     }
 
-async findOneClienteFornecedorBy(userId: number, clienteFornecedorId: number) {
-        const company = await this.getUserWithCompany(userId);
+    async findOneClienteFornecedorBy(userId: number, clienteFornecedorId: number) {
+        const data = await this.getUserWithCompany(userId);
 
         // --- DEBUG ---
         console.log('--- DEBUG CLIENTE FORNECEDOR ---');
         console.log('UserId recebido:', userId);
-        console.log('Company encontrada:', company?.id, company?.name);
+        console.log('Company encontrada:', data?.companyId, data?.company?.name);
         console.log('ClienteFornecedorId procurado:', clienteFornecedorId);
         // --------------
+        const companyId = data.companyId
+        if (!companyId) {
+            throw new NotFoundException('Não encontrado companyId.');
+        }
 
         const item = await this.clienteFornecedorRepository.findOne({
             where: {
                 id: clienteFornecedorId,
-                companyId: company.id,
+                companyId: Number(data.companyId),
             },
         });
 
@@ -231,7 +235,7 @@ async findOneClienteFornecedorBy(userId: number, clienteFornecedorId: number) {
         return payload
     }
 
-async gerarPayloadUpdateEmitente(userId: number) {
+    async gerarPayloadUpdateEmitente(userId: number) {
         const nfseApiUrl = this.configService.get<string>('NFSE_API_URL');
         //getUserWithCompany
         const dadosEmpresaCompleto = await this.findByUserId(userId);
@@ -249,7 +253,7 @@ async gerarPayloadUpdateEmitente(userId: number) {
             proximoNumeroDps: dadosEmpresaCompleto.serieDps ? Number(dadosEmpresaCompleto.serieDps) : 0,
         };
         console.log(payload);
-        
+
         try {
             const response = await firstValueFrom(
                 this.httpService.post<PaymentResponseDto>(
@@ -292,7 +296,7 @@ async gerarPayloadUpdateEmitente(userId: number) {
         }
     }
 
-async upsertSettings(userId: string | number, dto: UpdateCompanyFiscalDto) {
+    async upsertSettings(userId: string | number, dto: UpdateCompanyFiscalDto) {
         const user = await this.getUserWithCompany(Number(userId));
         const company = user.company;
 
