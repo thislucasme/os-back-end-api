@@ -281,7 +281,7 @@ export class CompanyFiscalServiceManager {
         }
     }
 
-    async upsertSettings(userId: string | number, dto: UpdateCompanyFiscalDto) {
+async upsertSettings(userId: string | number, dto: UpdateCompanyFiscalDto) {
         const user = await this.getUserWithCompany(Number(userId));
         const company = user.company;
 
@@ -300,9 +300,7 @@ export class CompanyFiscalServiceManager {
             settings = this.settingsRepository.create({ companyUid: company.uid });
         }
 
-
-
-        // Gerenciamento dos serviços fiscais (agora salvando as alíquotas e tributos específicos por serviço)
+        // Gerenciamento dos serviços fiscais
         if (services) {
             const incomingServiceIds = services.filter((s) => s.id).map((s) => s.id);
 
@@ -328,14 +326,17 @@ export class CompanyFiscalServiceManager {
             }
         }
 
-        const nfseEmitente = await this.gerarPayloadUpdateEmitente(Number(userId))
-
-        if (nfseEmitente.id)
-            settings.nfseEmitenteUid = nfseEmitente.id
-
-        // Atualiza apenas os dados gerais na tabela de configurações da empresa
+        // 1. PRIMEIRO atualiza e salva os dados na tabela local
         Object.assign(settings, settingsData);
         await this.settingsRepository.save(settings);
+
+        // 2. DEPOIS gera o payload e atualiza o emitente na API externa com os dados já salvos
+        const nfseEmitente = await this.gerarPayloadUpdateEmitente(Number(userId));
+
+        if (nfseEmitente.id) {
+            settings.nfseEmitenteUid = nfseEmitente.id;
+            await this.settingsRepository.save(settings);
+        }
 
         return this.findByUserId(userId);
     }
