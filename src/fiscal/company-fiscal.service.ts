@@ -64,8 +64,15 @@ export class CompanyFiscalServiceManager {
         return user;
     }
 
-    async findOneClienteFornecedorBy(userId: number, clienteFornecedorId: number) {
+async findOneClienteFornecedorBy(userId: number, clienteFornecedorId: number) {
         const company = await this.getUserWithCompany(userId);
+
+        // --- DEBUG ---
+        console.log('--- DEBUG CLIENTE FORNECEDOR ---');
+        console.log('UserId recebido:', userId);
+        console.log('Company encontrada:', company?.id, company?.name);
+        console.log('ClienteFornecedorId procurado:', clienteFornecedorId);
+        // --------------
 
         const item = await this.clienteFornecedorRepository.findOne({
             where: {
@@ -73,6 +80,10 @@ export class CompanyFiscalServiceManager {
                 companyId: company.id,
             },
         });
+
+        // --- DEBUG ---
+        console.log('Item encontrado no banco:', item);
+        // --------------
 
         if (!item) {
             throw new NotFoundException('Cadastro não encontrado.');
