@@ -220,7 +220,7 @@ export class CompanyFiscalServiceManager {
         return payload
     }
 
-    async gerarPayloadUpdateEmitente(userId: number) {
+async gerarPayloadUpdateEmitente(userId: number) {
         const nfseApiUrl = this.configService.get<string>('NFSE_API_URL');
         //getUserWithCompany
         const dadosEmpresaCompleto = await this.findByUserId(userId);
@@ -237,7 +237,8 @@ export class CompanyFiscalServiceManager {
             serieDps: dadosEmpresaCompleto.serie ? String(dadosEmpresaCompleto.serie) : null,
             proximoNumeroDps: dadosEmpresaCompleto.serieDps ? Number(dadosEmpresaCompleto.serieDps) : 0,
         };
-        console.log(payload)
+        console.log(payload);
+        
         try {
             const response = await firstValueFrom(
                 this.httpService.post<PaymentResponseDto>(
@@ -248,10 +249,9 @@ export class CompanyFiscalServiceManager {
 
             return response.data;
         } catch (error: any) {
-            if (error.response) {
-                console.error("Detalhes do erro:", error.response.data);
-            }
-            throw new BadRequestException(error.response.data)
+            const errorDetails = error.response?.data || error.message || 'Erro desconhecido ao comunicar com a API de NFS-e';
+            console.error("Detalhes do erro:", errorDetails);
+            throw new BadRequestException(errorDetails);
         }
     }
 
