@@ -11,6 +11,8 @@ import {
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 
+import { randomUUID } from 'crypto';
+
 import { User } from 'src/users/user.entity';
 import { CreateCompanyDto } from './dto/create-company.dto';
 import { UpdateCompanyDto } from './dto/update-company.dto';
@@ -46,7 +48,7 @@ export class CompaniesService {
 
     return this.cryptoService.decrypt(user.company.apiToken);
   }
-  
+
   async getApiTokenByCompanyId(companyId: number): Promise<string | null> {
     const company = await this.companyRepo.findOne({
       where: { id: companyId },
@@ -56,13 +58,13 @@ export class CompaniesService {
     });
 
     if (company && company.apiToken) {
-       return this.cryptoService.decrypt(company.apiToken);
+      return this.cryptoService.decrypt(company.apiToken);
     }
     return null
 
-   
+
   }
-    async getWebHookTokenByCompanyId(companyId: number): Promise<string> {
+  async getWebHookTokenByCompanyId(companyId: number): Promise<string> {
     const company = await this.companyRepo.findOne({
       where: { id: companyId },
       select: {
@@ -92,7 +94,7 @@ export class CompaniesService {
     return user;
   }
 
-    public async getCompanyByCompanyId(companyId: number) {
+  public async getCompanyByCompanyId(companyId: number) {
     const user = await this.userRepo.findOne({
       where: { companyId },
       relations: {
@@ -106,7 +108,7 @@ export class CompaniesService {
 
     return user;
   }
-      public async getHookTokenByCompanyId(companyId: number) {
+  public async getHookTokenByCompanyId(companyId: number) {
     const user = await this.userRepo.findOne({
       where: { companyId },
       relations: {
@@ -134,7 +136,11 @@ export class CompaniesService {
       );
     }
 
-    const company = this.companyRepo.create(dto);
+    const company = this.companyRepo.create({
+      ...dto,
+      uid: randomUUID(),
+    });
+
     const savedCompany = await this.companyRepo.save(company);
 
     user.companyId = savedCompany.id;
@@ -164,7 +170,7 @@ export class CompaniesService {
       throw new NotFoundException('Empresa não encontrada');
     }
 
-    return user.company; 
+    return user.company;
   }
 
   async updateProfile(userId: number, dto: UpdateCompanyDto) {
@@ -175,6 +181,10 @@ export class CompaniesService {
       dto.apiToken = assasApiTokenCrypted
     }
     Object.assign(company, dto);
+
+    if (!company.uid) {
+      company.uid = randomUUID();
+    }
 
     if (company.apiToken && !company.webHookToken) {
       const assasApiKeyDecryped = this.cryptoService.decrypt(company.apiToken)
@@ -194,8 +204,8 @@ export class CompaniesService {
       const assasApiKeyDecryped = this.cryptoService.decrypt(company.apiToken)
       const createdWebHook = await this.cadastrarEmpresaComAsaas(company, assasApiKeyDecryped, String(company.id))
       if (createdWebHook.success) {
-       
-      const assasWebHookTokenCrypted = this.cryptoService.encrypt(createdWebHook.webhook.authToken)
+
+        const assasWebHookTokenCrypted = this.cryptoService.encrypt(createdWebHook.webhook.authToken)
         company.webHookToken = assasWebHookTokenCrypted
       }
     }
@@ -216,7 +226,7 @@ export class CompaniesService {
         asaasToken,
         companyId
       );
- console.log("token webhook criado:", webhookResponse)
+      console.log("token webhook criado:", webhookResponse)
       this.logger.log(`Webhook configurado com sucesso no Asaas: ${webhookResponse.url}`);
 
       // (Opcional) Se o Asaas retornar um authToken/secret do webhook, salve-o no banco aqui:
